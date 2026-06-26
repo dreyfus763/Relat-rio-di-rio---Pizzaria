@@ -399,6 +399,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <option value="Balcão">Balcão</option>
           <option value="iFood">iFood</option>
           <option value="WhatsApp">WhatsApp</option>
+          <option value="Anota AI">Anota AI</option>
           <option value="Outro">Outro</option>
         </select>
       </div>
@@ -1420,8 +1421,7 @@ function copiarSecao(tipo){
   if(!arr.length){alert('Nenhum item para copiar.');return;}
   txt=(tipo==='vendas'?'VENDAS:\n':'DESPESAS:\n');
   arr.forEach(it=>{txt+=`${fmt(it.val)} - ${escapeHTML(it.desc)}${tipo==='vendas'?' ('+it.plat+')':''}\n`;});
-  txt+=`Total: R$ ${fmt(arr.reduce((s,it)=>s+it.val,0))}`;
-  copiar(txt);
+  copiar(txt.trim());
 }
 function copiarTudo(){copiar(gerarTexto(state,currentDate));}
 function copiarVer(){copiar(gerarTexto(editState,editDate));}

@@ -4,8 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Relatório Pizzaria</title>
-<!-- versão corrigida v4: editFunc/editItem/editDevia expostas em window + step do caixa ajustado -->
+<!-- Controle diário da pizzaria: caixa, funcionários, vendas, despesas, anotações e pizzas iFood -->
 <!-- Firebase via REST: sem SDK externo, app abre mesmo offline -->
+<!-- Dia comercial vira às 06:00 (não à meia-noite) -->
 
 <style>
 :root {
@@ -98,7 +99,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .modal-title{font-size:15px;font-weight:700;margin-bottom:14px;}
 /* HISTÓRICO */
 .hist-year{font-size:14px;font-weight:700;padding:10px 0 6px;color:var(--muted);border-bottom:1px solid var(--border);margin-bottom:8px;}
-.hist-month{font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 6px 8px;}
+.hist-month{font-size:13px;font-weight:600;color:var(--text);margin:10px 0 6px 0;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.hist-month:hover{border-color:var(--green);}
+.hist-month-arrow{color:var(--muted);font-size:12px;}
+.hist-month-days{padding-top:2px;}
 .hist-day{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;}
 .hist-day:hover{border-color:var(--green);}
 /* REL PREVIEW */
@@ -274,6 +278,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="btn btn-gray" onclick="irHome()">← Início</button>
       <div style="font-size:16px;font-weight:700;">📂 Histórico</div>
     </div>
+    <div class="btn-row" style="margin-bottom:14px;margin-top:0;">
+      <button class="btn btn-copy" onclick="exportarBackup()">⬇️ Backup completo</button>
+      <label class="btn btn-orange" style="cursor:pointer;">⬆️ Restaurar backup<input type="file" accept=".json" id="backup-import-input" style="display:none;" onchange="importarBackup(event)"/></label>
+    </div>
     <div id="hist-content"><div class="empty">Carregando...</div></div>
   </div>
 </div>
@@ -325,7 +333,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <button class="btn btn-purple" onclick="eAbrirModalFunc(true)">+ Free</button>
           </div>
         </div>
-        <div class="sec-body" id="efunc-list"><div class="empty">Nenhum funcionário.</div></div>
+        <div class="sec-body">
+          <input type="text" id="efunc-search" class="func-search" placeholder="🔍 Buscar funcionário..." oninput="eFiltrarFunc()"/>
+          <div id="efunc-list"><div class="empty">Nenhum funcionário.</div></div>
+        </div>
       </div>
       <div class="sec">
         <div class="sec-hdr">
@@ -347,12 +358,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div id="edesp-total" style="display:none;"></div>
         </div>
       </div>
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">📝 Anotações / Devendo</div>
-          <button class="btn btn-orange" onclick="eAbrirModalDevia()">+ Anotar</button>
+      <div class="sec-pair">
+        <div class="sec" style="margin-bottom:12px;">
+          <div class="sec-hdr">
+            <div class="sec-title">📝 Anotações / Devendo</div>
+            <button class="btn btn-orange" onclick="eAbrirModalDevia()">+ Anotar</button>
+          </div>
+          <div class="sec-body" id="edevia-list"><div class="empty">Nenhuma anotação.</div></div>
         </div>
-        <div class="sec-body" id="edevia-list"><div class="empty">Nenhuma anotação.</div></div>
+        <div class="sec" style="margin-bottom:12px;">
+          <div class="sec-hdr"><div class="sec-title">🍕 Pizzas iFood</div></div>
+          <div class="sec-body" id="epiz-box"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -821,7 +838,7 @@ function editSave() {
 
 // ===== RENDER PRINCIPAL =====
 function render() { state = normalizeState(state); renderDep(); renderFunc(); renderVendas(); renderDesp(); renderDevia(); renderPizzas(); }
-function eRender() { editState = normalizeState(editState); eRenderDep(); eRenderFunc(); eRenderVendas(); eRenderDesp(); eRenderDevia(); }
+function eRender() { editState = normalizeState(editState); eRenderDep(); eRenderFunc(); eRenderVendas(); eRenderDesp(); eRenderDevia(); eRenderPizzas(); }
 
 // ===== DEPÓSITOS =====
 function renderDep() {
@@ -842,7 +859,7 @@ function addDep(){
   document.getElementById('dep-val').value='';document.getElementById('dep-quem').value='';
   renderDep();save();
 }
-function remDep(i){state.depositos.splice(i,1);renderDep();save();}
+function remDep(i){if(!confirm('Excluir este depósito?'))return;state.depositos.splice(i,1);renderDep();save();}
 
 function eRenderDep() {
   const el=document.getElementById('edep-list');
@@ -862,7 +879,7 @@ function eAddDep(){
   document.getElementById('edep-val').value='';document.getElementById('edep-quem').value='';
   eRenderDep();editSave();
 }
-function eRemDep(i){editState.depositos.splice(i,1);eRenderDep();editSave();}
+function eRemDep(i){if(!confirm('Excluir este depósito?'))return;editState.depositos.splice(i,1);eRenderDep();editSave();}
 
 // ===== FUNCIONÁRIOS =====
 // Determina se o funcionário ainda está trabalhando (último turno sem saída
@@ -908,13 +925,16 @@ function funcCard(f, i, ctx) {
   </div>`;
 }
 
-function renderFunc(){
-  const el=document.getElementById('func-list');
-  state = normalizeState(state);
-  if(!state.funcionarios.length){el.innerHTML='<div class="empty">Nenhum funcionário ainda.</div>';return;}
+// Renderiza a lista de funcionários (busca + agrupamento por status) para
+// qualquer um dos dois contextos. Usado tanto pela tela "Anotar" de hoje
+// quanto pela tela de edição de um dia antigo via Histórico.
+function _renderFuncList(listId, searchId, arr, ctx){
+  const el=document.getElementById(listId);
+  if(!el) return;
+  if(!arr.length){el.innerHTML='<div class="empty">Nenhum funcionário ainda.</div>';return;}
 
-  const termo = (document.getElementById('func-search')?.value || '').trim().toLowerCase();
-  const comIdx = state.funcionarios.map((f,i)=>({f,i})).filter(({f})=>!termo || f.nome.toLowerCase().includes(termo));
+  const termo = (document.getElementById(searchId)?.value || '').trim().toLowerCase();
+  const comIdx = arr.map((f,i)=>({f,i})).filter(({f})=>!termo || f.nome.toLowerCase().includes(termo));
 
   if(!comIdx.length){ el.innerHTML='<div class="empty">Nenhum funcionário encontrado para "'+escapeHTML(termo)+'".</div>'; return; }
 
@@ -926,30 +946,29 @@ function renderFunc(){
   let html='';
   if(presentes.length || indefinidos.length){
     html+=`<div class="func-group-label">🟢 Ainda no trabalho (${presentes.length+indefinidos.length})</div>`;
-    html+=[...presentes,...indefinidos].map(({f,i})=>funcCard(f,i,'main')).join('');
+    html+=[...presentes,...indefinidos].map(({f,i})=>funcCard(f,i,ctx)).join('');
   }
   if(saidos.length){
     html+=`<div class="func-group-label">⚪ Já saíram (${saidos.length})</div>`;
-    html+=saidos.map(({f,i})=>funcCard(f,i,'main')).join('');
+    html+=saidos.map(({f,i})=>funcCard(f,i,ctx)).join('');
   }
   if(consumo.length){
     html+=`<div class="func-group-label">🍕 Só consumo (${consumo.length})</div>`;
-    html+=consumo.map(({f,i})=>funcCard(f,i,'main')).join('');
+    html+=consumo.map(({f,i})=>funcCard(f,i,ctx)).join('');
   }
   el.innerHTML=html;
 }
+function renderFunc(){ state = normalizeState(state); _renderFuncList('func-list','func-search', state.funcionarios, 'main'); }
 function filtrarFunc(){ renderFunc(); }
 
-function remFunc(i){state.funcionarios.splice(i,1);renderFunc();save();}
+function remFunc(i){const f=state.funcionarios[i];if(!confirm(`Excluir "${f?f.nome:'este funcionário'}"?`))return;state.funcionarios.splice(i,1);renderFunc();save();}
 function editFunc(i){_openModalFunc(i,'main',state.funcionarios[i]);}
 
-function eRenderFunc(){
-  const el=document.getElementById('efunc-list');
-  editState = normalizeState(editState); if(!editState.funcionarios.length){el.innerHTML='<div class="empty">Nenhum funcionário.</div>';return;}
-  el.innerHTML=editState.funcionarios.map((f,i)=>funcCard(f,i,'edit')).join('');
-}
-function eRemFunc(i){editState.funcionarios.splice(i,1);eRenderFunc();editSave();}
+function eRenderFunc(){ editState = normalizeState(editState); _renderFuncList('efunc-list','efunc-search', editState.funcionarios, 'edit'); }
+function eFiltrarFunc(){ eRenderFunc(); }
+function eRemFunc(i){const f=editState.funcionarios[i];if(!confirm(`Excluir "${f?f.nome:'este funcionário'}"?`))return;editState.funcionarios.splice(i,1);eRenderFunc();editSave();}
 function eEditFunc(i){_openModalFunc(i,'edit',editState.funcionarios[i]);}
+
 
 function abrirModalFunc(free){_openModalFunc(-1,'main',null,free);}
 function eAbrirModalFunc(free){_openModalFunc(-1,'edit',null,free);}
@@ -1056,8 +1075,8 @@ function salvarItem(){
   if(ctx==='edit'){tipo==='venda'?eRenderVendas():eRenderDesp();editSave();}else{tipo==='venda'?renderVendas():renderDesp();save();}
 }
 
-function remItem(tipo,i){if(tipo==='venda')state.vendas.splice(i,1);else state.despesas.splice(i,1);tipo==='venda'?renderVendas():renderDesp();save();}
-function eRemItem(tipo,i){if(tipo==='venda')editState.vendas.splice(i,1);else editState.despesas.splice(i,1);tipo==='venda'?eRenderVendas():eRenderDesp();editSave();}
+function remItem(tipo,i){const it=tipo==='venda'?state.vendas[i]:state.despesas[i];if(!confirm(`Excluir "${it?it.desc:'este item'}"?`))return;if(tipo==='venda')state.vendas.splice(i,1);else state.despesas.splice(i,1);tipo==='venda'?renderVendas():renderDesp();save();}
+function eRemItem(tipo,i){const it=tipo==='venda'?editState.vendas[i]:editState.despesas[i];if(!confirm(`Excluir "${it?it.desc:'este item'}"?`))return;if(tipo==='venda')editState.vendas.splice(i,1);else editState.despesas.splice(i,1);tipo==='venda'?eRenderVendas():eRenderDesp();editSave();}
 
 // ===== DEVIAS =====
 function deviaCard(d,i,ctx){
@@ -1079,27 +1098,29 @@ function eRenderDevia(){const el=document.getElementById('edevia-list');editStat
 
 // ===== PIZZAS IFOOD =====
 const PIZ_LABELS = { p:'Pequena', m:'Média', g:'Grande', gg:'Gigante' };
-function renderPizzas(){
-  const el=document.getElementById('piz-box');
+function _renderPizzasBox(elId, st, ctx){
+  const el=document.getElementById(elId);
   if(!el) return;
-  state = normalizeState(state);
-  const pz = state.pizzas;
+  const pz = st.pizzas;
   const total = (pz.p||0)+(pz.m||0)+(pz.g||0)+(pz.gg||0);
+  const fnAjustar = ctx==='edit' ? 'eAjustarPizza' : 'ajustarPizza';
+  const fnDefinir = ctx==='edit' ? 'eDefinirPizza' : 'definirPizza';
   el.innerHTML = `<div class="piz-grid">
     ${Object.keys(PIZ_LABELS).map(k=>`
       <div class="piz-box">
         <span class="piz-box-label">${PIZ_LABELS[k]}</span>
         <div class="piz-ctrl">
-          <button class="piz-btn minus" onclick="ajustarPizza('${k}',-1)">−</button>
+          <button class="piz-btn minus" onclick="${fnAjustar}('${k}',-1)">−</button>
           <input class="piz-val" type="number" min="0" step="1" inputmode="numeric" value="${pz[k]||0}"
-                 onchange="definirPizza('${k}',this.value)"
+                 onchange="${fnDefinir}('${k}',this.value)"
                  onfocus="this.select()"/>
-          <button class="piz-btn plus" onclick="ajustarPizza('${k}',1)">+</button>
+          <button class="piz-btn plus" onclick="${fnAjustar}('${k}',1)">+</button>
         </div>
       </div>`).join('')}
   </div>
   <div class="piz-total"><span>Total de pizzas iFood</span><span>${total}</span></div>`;
 }
+function renderPizzas(){ state = normalizeState(state); _renderPizzasBox('piz-box', state, 'main'); }
 function ajustarPizza(tipo, delta){
   state = normalizeState(state);
   const novo = (state.pizzas[tipo]||0) + delta;
@@ -1115,6 +1136,24 @@ function definirPizza(tipo, valor){
   renderPizzas();
   save();
 }
+
+function eRenderPizzas(){ editState = normalizeState(editState); _renderPizzasBox('epiz-box', editState, 'edit'); }
+function eAjustarPizza(tipo, delta){
+  editState = normalizeState(editState);
+  const novo = (editState.pizzas[tipo]||0) + delta;
+  editState.pizzas[tipo] = novo < 0 ? 0 : novo;
+  eRenderPizzas();
+  editSave();
+}
+function eDefinirPizza(tipo, valor){
+  editState = normalizeState(editState);
+  let n = parseInt(valor, 10);
+  if(isNaN(n) || n < 0) n = 0;
+  editState.pizzas[tipo] = n;
+  eRenderPizzas();
+  editSave();
+}
+
 
 function abrirModalDevia(){_openModalDevia(-1,'main',null);}
 function editDevia(i){_openModalDevia(i,'main',state.devias[i]);}
@@ -1137,8 +1176,8 @@ function salvarDevia(){
   if(ctx==='edit'){eRenderDevia();editSave();}else{renderDevia();save();}
 }
 
-function remDevia(i){state.devias.splice(i,1);renderDevia();save();}
-function eRemDevia(i){editState.devias.splice(i,1);eRenderDevia();editSave();}
+function remDevia(i){const d=state.devias[i];if(!confirm(`Excluir "${d?d.nome:'esta anotação'}"?`))return;state.devias.splice(i,1);renderDevia();save();}
+function eRemDevia(i){const d=editState.devias[i];if(!confirm(`Excluir "${d?d.nome:'esta anotação'}"?`))return;editState.devias.splice(i,1);eRenderDevia();editSave();}
 
 // ===== GERAR TEXTO =====
 function gerarTexto(st,dk){
@@ -1428,20 +1467,61 @@ function copiarVer(){copiar(gerarTexto(editState,editDate));}
 function copiar(txt){navigator.clipboard.writeText(txt).then(()=>alert('✅ Copiado!')).catch(()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ Copiado!');});}
 
 // ===== HISTÓRICO =====
+// ===== BACKUP COMPLETO (exportar/restaurar todos os dias) =====
+async function exportarBackup(){
+  const keys = await window._loadAllKeys();
+  if(!keys.length){ alert('Nenhum relatório salvo ainda — nada para fazer backup.'); return; }
+  const dados = {};
+  keys.forEach(k=>{ const d = window._getCached(k); if(d) dados[k]=d; });
+  const payload = { app:'relatorio-pizzaria', geradoEm: new Date().toISOString(), dados };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup_pizzaria_${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importarBackup(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const dados = parsed && parsed.dados ? parsed.dados : parsed; // aceita backup novo ou um JSON simples {data: relatorio}
+    const chaves = Object.keys(dados||{});
+    if(!chaves.length){ alert('Arquivo de backup vazio ou em formato não reconhecido.'); event.target.value=''; return; }
+    if(!confirm(`Este backup tem ${chaves.length} dia(s) de relatório. Os dados serão somados/sobrescritos por data — dias já existentes com a mesma data serão substituídos pelo backup. Continuar?`)){ event.target.value=''; return; }
+    let ok=0, falhas=0;
+    for(const k of chaves){
+      try{ await window._save(k, normalizeState(dados[k])); ok++; }
+      catch(e){ falhas++; }
+    }
+    alert(`✅ Restaurado: ${ok} dia(s)${falhas?`\n⚠️ Falhou: ${falhas} dia(s)`:''}`);
+    carregarHistorico();
+  }catch(e){
+    alert('Não consegui ler este arquivo. Confira se é um backup válido (.json) gerado por este app.');
+  }
+  event.target.value='';
+}
+
 async function carregarHistorico(){
   document.getElementById('hist-content').innerHTML='<div class="empty">Carregando...</div>';
   const keys=await window._loadAllKeys();
   if(!keys.length){document.getElementById('hist-content').innerHTML='<div class="empty">Nenhum relatório salvo ainda.</div>';return;}
   const tree={};
   keys.sort().reverse().forEach(k=>{const[y,m]=k.split('-');if(!tree[y])tree[y]={};if(!tree[y][m])tree[y][m]=[];tree[y][m].push(k);});
+  const mesAtualChave = todayStr().slice(0,7); // "YYYY-MM" do dia comercial atual
   let html='';
   Object.keys(tree).sort().reverse().forEach(y=>{
     html+=`<div class="hist-year">📅 ${y}</div>`;
     Object.keys(tree[y]).sort().reverse().forEach(m=>{
-      html+=`<div class="hist-month">${MESES_FULL[parseInt(m)-1]}</div>`;
-      tree[y][m].forEach(k=>{
+      const chaveMes = `${y}-${m}`;
+      const aberto = chaveMes===mesAtualChave;
+      const diasHtml = tree[y][m].map(k=>{
         const isToday=k===todayStr();
-        html+=`<div class="hist-day">
+        return `<div class="hist-day">
           <div>
             <div style="font-weight:600;">📋 ${fmtDate(k)}${isToday?' <span style="background:var(--green);color:#fff;font-size:10px;padding:2px 7px;border-radius:99px;margin-left:6px;">Hoje</span>':''}</div>
           </div>
@@ -1450,11 +1530,25 @@ async function carregarHistorico(){
             <button onclick="editarDia('${k}')" class="btn btn-green" style="padding:5px 12px;font-size:12px;">✏️ Editar</button>
           </div>
         </div>`;
-      });
+      }).join('');
+      html+=`<div class="hist-month" onclick="toggleHistMes('${chaveMes}')">
+        <span>${MESES_FULL[parseInt(m)-1]} <span style="color:var(--muted);font-weight:400;">(${tree[y][m].length})</span></span>
+        <span class="hist-month-arrow" id="hist-arrow-${chaveMes}">${aberto?'▾':'▸'}</span>
+      </div>
+      <div class="hist-month-days" id="hist-days-${chaveMes}" style="${aberto?'':'display:none;'}">${diasHtml}</div>`;
     });
   });
   document.getElementById('hist-content').innerHTML=html;
 }
+function toggleHistMes(chaveMes){
+  const dias = document.getElementById('hist-days-'+chaveMes);
+  const arrow = document.getElementById('hist-arrow-'+chaveMes);
+  if(!dias) return;
+  const abrir = dias.style.display==='none';
+  dias.style.display = abrir ? 'block' : 'none';
+  if(arrow) arrow.textContent = abrir ? '▾' : '▸';
+}
+
 
 async function verDia(dateKey){
   editDate=dateKey;
@@ -1508,9 +1602,12 @@ window.editDevia=editDevia;window.eEditDevia=eEditDevia;
 window.remDevia=remDevia;window.eRemDevia=eRemDevia;window.salvarDevia=salvarDevia;
 window.copiarSecao=copiarSecao;window.copiarTudo=copiarTudo;window.copiarVer=copiarVer;
 window.verDia=verDia;window.editarDia=editarDia;window.fecharModal=fecharModal;
+window.toggleHistMes=toggleHistMes;
+window.exportarBackup=exportarBackup;window.importarBackup=importarBackup;
 window.showPage=showPage;
 window.ajustarPizza=ajustarPizza;window.definirPizza=definirPizza;
-window.filtrarFunc=filtrarFunc;
+window.eAjustarPizza=eAjustarPizza;window.eDefinirPizza=eDefinirPizza;
+window.filtrarFunc=filtrarFunc;window.eFiltrarFunc=eFiltrarFunc;
 window.irParaFim=irParaFim;
 window.abrirModalImport=abrirModalImport;window.voltarImportPaste=voltarImportPaste;
 window.processarImport=processarImport;window.confirmarImport=confirmarImport;

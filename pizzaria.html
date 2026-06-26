@@ -868,7 +868,10 @@ function eRemDep(i){editState.depositos.splice(i,1);eRenderDep();editSave();}
 // preenchida) ou já saiu (todos os turnos têm entrada e saída).
 function funcStatus(f){
   const turnos = (f.turnos||[]).filter(t=>t.ent||t.sai);
-  if(!turnos.length) return 'indefinido';
+  // Sem nenhum horário: não é alguém "no trabalho" nem "que saiu" — é só um
+  // registro de consumo (ex: pizza/coca de alguém que passou lá), então não
+  // entra na contagem de presença.
+  if(!turnos.length) return 'consumo';
   const ultimo = turnos[turnos.length-1];
   if(ultimo.ent && !ultimo.sai) return 'presente';
   if(turnos.every(t=>t.ent && t.sai)) return 'saiu';
@@ -917,6 +920,7 @@ function renderFunc(){
   const presentes = comIdx.filter(({f})=>funcStatus(f)==='presente');
   const indefinidos = comIdx.filter(({f})=>funcStatus(f)==='indefinido');
   const saidos = comIdx.filter(({f})=>funcStatus(f)==='saiu');
+  const consumo = comIdx.filter(({f})=>funcStatus(f)==='consumo');
 
   let html='';
   if(presentes.length || indefinidos.length){
@@ -926,6 +930,10 @@ function renderFunc(){
   if(saidos.length){
     html+=`<div class="func-group-label">⚪ Já saíram (${saidos.length})</div>`;
     html+=saidos.map(({f,i})=>funcCard(f,i,'main')).join('');
+  }
+  if(consumo.length){
+    html+=`<div class="func-group-label">🍕 Só consumo (${consumo.length})</div>`;
+    html+=consumo.map(({f,i})=>funcCard(f,i,'main')).join('');
   }
   el.innerHTML=html;
 }

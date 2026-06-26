@@ -64,8 +64,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .func-card.free{border-color:var(--purple);background:var(--purple-lt);}
 .func-name{font-size:15px;font-weight:700;}
 .func-turno{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;}
+.func-turno-row{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
+.func-horario{font-size:13px;font-weight:700;color:#0c7a5a;background:#e3f7ee;border:1px solid #b9e8d3;border-radius:6px;padding:2px 8px;font-family:'SF Mono',Consolas,monospace;letter-spacing:.01em;}
+.func-horario em{font-style:normal;color:#1D9E75;}
+.func-horario-sep{color:var(--muted);font-size:12px;margin:0 4px;}
+.func-horario-vazio{color:var(--muted);background:var(--surface);border-color:var(--border);font-weight:600;font-family:inherit;}
+.func-consumo{font-size:12px;color:var(--muted);margin-top:4px;}
+.func-status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.func-status-dot.presente{background:var(--green);box-shadow:0 0 0 2px var(--green-lt);}
+.func-status-dot.saiu{background:var(--muted);}
 .func-pag{font-size:14px;font-weight:700;color:var(--purple);margin-top:5px;}
 .func-obs{font-size:12px;color:var(--muted);margin-top:3px;}
+.func-search{width:100%;border:1px solid var(--border);border-radius:99px;padding:6px 12px;font-size:12px;color:var(--muted);background:var(--surface2);outline:none;margin-bottom:9px;font-family:inherit;}
+.func-search:focus{border-color:var(--green);color:var(--text);background:var(--surface);}
+.func-search::placeholder{color:var(--muted);}
+.func-group-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px;display:flex;align-items:center;gap:6px;}
+.func-group-label:first-child{margin-top:0;}
 .item-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;gap:8px;}
 .item-left{flex:1;min-width:0;}
 .item-desc{font-size:13px;font-weight:500;}
@@ -112,6 +126,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .imp-line.ok{background:var(--green-lt);border-color:rgba(29,158,117,.25);}
 .imp-tag{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:99px;background:var(--surface);color:var(--muted);flex-shrink:0;}
 .imp-summary{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6;}
+/* SCROLL FAB */
+.scroll-fab{position:fixed;right:16px;bottom:22px;width:46px;height:46px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);z-index:150;display:flex;align-items:center;justify-content:center;transition:transform .15s, opacity .15s;}
+.scroll-fab:active{transform:scale(0.92);}
+.scroll-fab.at-bottom{background:var(--surface);color:var(--green);border:1px solid var(--green);}
 @media(max-width:480px){.row2{grid-template-columns:1fr 1fr;}.sec-pair{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -144,6 +162,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="tab-btn active" onclick="switchTab('anotar')">✏️ Anotar</button>
     <button class="tab-btn" onclick="switchTab('finalizar')">✅ Finalizar</button>
   </div>
+  <button class="scroll-fab" id="scroll-fab" onclick="irParaFim()" title="Ir para o fim" style="display:none;">⬇️</button>
   <div class="ctr">
 
     <!-- TAB ANOTAR -->
@@ -178,7 +197,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <button class="btn btn-purple" onclick="abrirModalFunc(true)">+ Free</button>
           </div>
         </div>
-        <div class="sec-body" id="func-list"><div class="empty">Nenhum funcionário ainda.</div></div>
+        <div class="sec-body">
+          <input type="text" id="func-search" class="func-search" placeholder="🔍 Buscar funcionário..." oninput="filtrarFunc()"/>
+          <div id="func-list"><div class="empty">Nenhum funcionário ainda.</div></div>
+        </div>
       </div>
 
       <!-- VENDAS -->
@@ -634,8 +656,15 @@ function parseMoney(value) {
   return Number(s);
 }
 
+// Vira o "dia" do relatório às 06:00, não à meia-noite — a pizzaria fecha perto
+// das 02:00, então de madrugada (00:00–05:59) o relatório ainda pertence ao dia
+// comercial anterior (ex: 02:30 de uma sexta ainda conta como quinta).
+const HORA_VIRADA_DIA = 6;
 function todayStr() {
   const d = new Date();
+  if (d.getHours() < HORA_VIRADA_DIA) {
+    d.setDate(d.getDate() - 1);
+  }
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -721,6 +750,8 @@ function irHistorico() { showPage('page-hist'); carregarHistorico(); }
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const fab = document.getElementById('scroll-fab');
+  if(fab) fab.style.display = (id==='page-rel') ? 'flex' : 'none';
 }
 
 // ===== TABS =====
@@ -730,6 +761,26 @@ function switchTab(name) {
   document.getElementById('tab-finalizar').style.display=name==='finalizar'?'block':'none';
   if(name==='finalizar') document.getElementById('rel-preview').textContent=gerarTexto(state,currentDate);
 }
+
+// ===== BOTÃO FLUTUANTE DE SCROLL =====
+// Vai para o fim da página; se já estiver perto do fim, volta para o topo.
+// Útil porque a tela "Anotar" cresce muito (funcionários, vendas, despesas,
+// anotações, pizzas) e essas duas últimas seções costumam ser as mais usadas.
+function irParaFim(){
+  const fab = document.getElementById('scroll-fab');
+  const pertoDoFim = (window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 80);
+  if(pertoDoFim) window.scrollTo({top:0, behavior:'smooth'});
+  else window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+}
+function atualizarScrollFab(){
+  const fab = document.getElementById('scroll-fab');
+  if(!fab) return;
+  const pertoDoFim = (window.innerHeight + window.scrollY) >= (document.body.scrollHeight - 80);
+  fab.textContent = pertoDoFim ? '⬆️' : '⬇️';
+  fab.title = pertoDoFim ? 'Ir para o topo' : 'Ir para o fim';
+  fab.classList.toggle('at-bottom', pertoDoFim);
+}
+window.addEventListener('scroll', atualizarScrollFab, {passive:true});
 
 function switchVerTab(name) {
   document.getElementById('ver-panel').style.display=name==='ver'?'block':'none';
@@ -813,20 +864,37 @@ function eAddDep(){
 function eRemDep(i){editState.depositos.splice(i,1);eRenderDep();editSave();}
 
 // ===== FUNCIONÁRIOS =====
+// Determina se o funcionário ainda está trabalhando (último turno sem saída
+// preenchida) ou já saiu (todos os turnos têm entrada e saída).
+function funcStatus(f){
+  const turnos = (f.turnos||[]).filter(t=>t.ent||t.sai);
+  if(!turnos.length) return 'indefinido';
+  const ultimo = turnos[turnos.length-1];
+  if(ultimo.ent && !ultimo.sai) return 'presente';
+  if(turnos.every(t=>t.ent && t.sai)) return 'saiu';
+  return 'indefinido';
+}
+
 function funcCard(f, i, ctx) {
-  const turnos=(f.turnos||[]).filter(t=>t.ent||t.sai).map(t=>`${t.ent} - ${t.sai}`).join(' | ');
-  let linha=turnos;
-  if(f.consumo&&f.turnos&&f.turnos.length===1) linha=`${f.turnos[0].ent} - ${f.consumo} - ${f.turnos[0].sai}`;
-  else if(f.consumo) linha+=` (${f.consumo})`;
+  const turnos = (f.turnos||[]).filter(t=>t.ent||t.sai);
+  const status = funcStatus(f);
+  const turnosHtml = turnos.length
+    ? turnos.map(t=>`<span class="func-horario">${t.ent||'?'} – ${t.sai||'<em>agora</em>'}</span>`).join('<span class="func-horario-sep">|</span>')
+    : '<span class="func-horario func-horario-vazio">sem horário</span>';
+  const consumoHtml = f.consumo ? `<div class="func-consumo">🍽️ ${escapeHTML(f.consumo)}</div>` : '';
   const pag=f.freelance&&f.totalPago?`<div class="func-pag">>>>>>>>> R$ ${fmt(f.totalPago)} Pago!!!!${f.horasStr?` (${f.horasStr})`:''}</div>`:'';
   const obs=f.obs?`<div class="func-obs">📝 ${escapeHTML(f.obs)}</div>`:'';
-  return `<div class="func-card ${f.freelance?'free':''}">
+  const statusDot = status==='presente' ? '<span class="func-status-dot presente" title="Ainda no trabalho"></span>' : (status==='saiu' ? '<span class="func-status-dot saiu" title="Já saiu"></span>' : '');
+  return `<div class="func-card ${f.freelance?'free':''}" data-func-nome="${escapeHTML(f.nome.toLowerCase())}" data-func-status="${status}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-      <div>
-        <span class="func-name">${escapeHTML(f.nome)}</span>
-        <span class="pill ${f.freelance?'pill-free':'pill-func'}" style="margin-left:6px;">${f.freelance?'Freelance':'Funcionário'}</span>
-        <div class="func-turno">${escapeHTML(linha||'—')}</div>
-        ${pag}${obs}
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+          ${statusDot}
+          <span class="func-name">${escapeHTML(f.nome)}</span>
+          <span class="pill ${f.freelance?'pill-free':'pill-func'}">${f.freelance?'Freelance':'Funcionário'}</span>
+        </div>
+        <div class="func-turno-row">${turnosHtml}</div>
+        ${consumoHtml}${pag}${obs}
       </div>
       <div style="display:flex;gap:5px;flex-shrink:0;">
         <button onclick="${ctx==='edit'?'eEditFunc':'editFunc'}(${i})" class="btn btn-gray" style="padding:4px 8px;font-size:11px;">✏️</button>
@@ -838,9 +906,31 @@ function funcCard(f, i, ctx) {
 
 function renderFunc(){
   const el=document.getElementById('func-list');
-  state = normalizeState(state); if(!state.funcionarios.length){el.innerHTML='<div class="empty">Nenhum funcionário ainda.</div>';return;}
-  el.innerHTML=state.funcionarios.map((f,i)=>funcCard(f,i,'main')).join('');
+  state = normalizeState(state);
+  if(!state.funcionarios.length){el.innerHTML='<div class="empty">Nenhum funcionário ainda.</div>';return;}
+
+  const termo = (document.getElementById('func-search')?.value || '').trim().toLowerCase();
+  const comIdx = state.funcionarios.map((f,i)=>({f,i})).filter(({f})=>!termo || f.nome.toLowerCase().includes(termo));
+
+  if(!comIdx.length){ el.innerHTML='<div class="empty">Nenhum funcionário encontrado para "'+escapeHTML(termo)+'".</div>'; return; }
+
+  const presentes = comIdx.filter(({f})=>funcStatus(f)==='presente');
+  const indefinidos = comIdx.filter(({f})=>funcStatus(f)==='indefinido');
+  const saidos = comIdx.filter(({f})=>funcStatus(f)==='saiu');
+
+  let html='';
+  if(presentes.length || indefinidos.length){
+    html+=`<div class="func-group-label">🟢 Ainda no trabalho (${presentes.length+indefinidos.length})</div>`;
+    html+=[...presentes,...indefinidos].map(({f,i})=>funcCard(f,i,'main')).join('');
+  }
+  if(saidos.length){
+    html+=`<div class="func-group-label">⚪ Já saíram (${saidos.length})</div>`;
+    html+=saidos.map(({f,i})=>funcCard(f,i,'main')).join('');
+  }
+  el.innerHTML=html;
 }
+function filtrarFunc(){ renderFunc(); }
+
 function remFunc(i){state.funcionarios.splice(i,1);renderFunc();save();}
 function editFunc(i){_openModalFunc(i,'main',state.funcionarios[i]);}
 
@@ -1142,6 +1232,12 @@ function parseRelatorioTexto(raw){
     if(reVendasHdr.test(linha)){ secao='vendas'; continue; }
     if(reDespesasHdr.test(linha)){ secao='despesas'; continue; }
     if(reDevemosHdr.test(linha)){ secao='devemos'; continue; }
+    // cabeçalho com texto sobrando na mesma linha (ex: "VENDAS: 3 itens") — entra
+    // na seção mesmo assim e descarta o resto, em vez de interpretar a palavra
+    // reservada como nome de funcionário mais adiante.
+    if(/^vendas\s*:/i.test(linha)){ secao='vendas'; result.ignoradas.push({texto:linha, motivo:'Cabeçalho de seção com texto extra (ignorado)'}); continue; }
+    if(/^despesas\s*:/i.test(linha)){ secao='despesas'; result.ignoradas.push({texto:linha, motivo:'Cabeçalho de seção com texto extra (ignorado)'}); continue; }
+    if(/^devemos\s*:/i.test(linha)){ secao='devemos'; result.ignoradas.push({texto:linha, motivo:'Cabeçalho de seção com texto extra (ignorado)'}); continue; }
 
     // caixa inicial / final (podem vir vazios)
     if((mm=linha.match(reCxIni))){
@@ -1185,8 +1281,17 @@ function parseRelatorioTexto(raw){
         const val=parseMoneyLoose(m3[2]);
         if(!isNaN(val)){ result.devias.push({nome:m3[1].trim(), val, det:''}); continue; }
       }
-      // sem valor numérico no final — trata como anotação só com nome/texto
-      result.devias.push({nome:linha, val:0, det:''});
+      // Sem valor numérico reconhecível no final: pode ser uma anotação sem valor
+      // (ex: "Moto João - levou maquininha") ou pode ser algo que não tem nada a
+      // ver com dívida (assinatura, observação solta etc). Como não dá para saber
+      // com certeza, importa como anotação mas marca para revisão, em vez de
+      // assumir silenciosamente. Linhas muito longas (provavelmente não são nomes
+      // de pessoa) vão direto para ignoradas.
+      if(linha.length<=40){
+        result.devias.push({nome:linha, val:0, det:'', warn:true});
+      } else {
+        result.ignoradas.push({texto:linha, motivo:'Não parece uma dívida (nome + valor) — revise manualmente'});
+      }
       continue;
     }
 
@@ -1257,7 +1362,7 @@ function renderImportPreview(p){
   });
   p.vendas.forEach(v=>html+=lineRow(`${escapeHTML(v.desc)} — R$ ${fmt(v.val)}`,'ok','Venda'));
   p.despesas.forEach(d=>html+=lineRow(`${escapeHTML(d.desc)} — R$ ${fmt(d.val)}`,'ok','Despesa'));
-  p.devias.forEach(d=>html+=lineRow(`${escapeHTML(d.nome)}${d.val?' — R$ '+fmt(d.val):''}`,'ok','Devendo'));
+  p.devias.forEach(d=>html+=lineRow(`${escapeHTML(d.nome)}${d.val?' — R$ '+fmt(d.val):''}`, d.warn?'warn':'ok', d.warn?'Revisar':'Devendo'));
   p.ignoradas.forEach(i=>html+=lineRow(`${escapeHTML(i.texto)} <span style="color:var(--muted);">(${escapeHTML(i.motivo)})</span>`,'warn','Não importado'));
   document.getElementById('import-preview-list').innerHTML = html || '<div class="empty">Nada reconhecido neste texto.</div>';
 }
@@ -1282,9 +1387,12 @@ function confirmarImport(){
       freelance:false, vlrHora:0, totalPago:0, horasStr:'', horasTotal:0
     });
   });
-  p.vendas.forEach(v=>state.vendas.push(v));
-  p.despesas.forEach(d=>state.despesas.push(d));
-  p.devias.forEach(d=>state.devias.push(d));
+  p.vendas.forEach(v=>state.vendas.push({val:v.val, desc:v.desc, plat:v.plat}));
+  p.despesas.forEach(d=>state.despesas.push({val:d.val, desc:d.desc, plat:d.plat}));
+  p.devias.forEach(d=>state.devias.push({
+    nome:d.nome, val:d.val||0,
+    det: d.warn ? (d.det ? d.det+' · ⚠️ revisar (importado sem valor claro)' : '⚠️ revisar (importado sem valor claro)') : (d.det||'')
+  }));
 
   document.getElementById('cx-ini').value = state.cxIni||'';
   document.getElementById('cx-fin').value = state.cxFin||'';
@@ -1394,6 +1502,8 @@ window.copiarSecao=copiarSecao;window.copiarTudo=copiarTudo;window.copiarVer=cop
 window.verDia=verDia;window.editarDia=editarDia;window.fecharModal=fecharModal;
 window.showPage=showPage;
 window.ajustarPizza=ajustarPizza;window.definirPizza=definirPizza;
+window.filtrarFunc=filtrarFunc;
+window.irParaFim=irParaFim;
 window.abrirModalImport=abrirModalImport;window.voltarImportPaste=voltarImportPaste;
 window.processarImport=processarImport;window.confirmarImport=confirmarImport;
 

@@ -18,10 +18,33 @@
   --purple:#7c3aed; --purple-lt:#f5f3ff;
   --r:10px;
 }
+body.theme-dark {
+  --bg:#15171a; --surface:#1e2024; --surface2:#26282d;
+  --border:#34373c; --text:#eee; --muted:#8a8d93;
+  --green:#2ecf95; --green-lt:#15302a;
+  --red:#ff6b6a; --red-lt:#3a1f20;
+  --orange:#ffb648; --orange-lt:#332a18;
+  --purple:#a78bfa; --purple-lt:#2a2440;
+}
+body.theme-neon {
+  --bg:#0a0612; --surface:#150e24; --surface2:#1c1233;
+  --border:#3d2a66; --text:#f1e8ff; --muted:#9b87c4;
+  --green:#39ff9e; --green-lt:#0f2e22;
+  --red:#ff3d7f; --red-lt:#33102090;
+  --orange:#ffd23f; --orange-lt:#332b0f;
+  --purple:#c850ff; --purple-lt:#26133f;
+}
+/* Tema neon: leve brilho nas bordas e títulos para reforçar o clima cyberpunk */
+body.theme-neon .sec{box-shadow:0 0 0 1px rgba(57,255,158,0.08), 0 0 18px rgba(200,80,255,0.06);}
+body.theme-neon .hdr{box-shadow:0 1px 12px rgba(57,255,158,0.12);}
+body.theme-neon .sec-title{text-shadow:0 0 8px rgba(57,255,158,0.35);}
+body.theme-neon .home-logo{filter:drop-shadow(0 0 14px rgba(200,80,255,0.55));}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;}
 .hdr-icon{width:32px;height:32px;background:#e25c1a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.theme-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;opacity:.7;transition:opacity .15s;}
+.theme-btn:hover{opacity:1;}
 .page{display:none;}.page.active{display:block;}
 /* HOME */
 .home-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:24px;text-align:center;}
@@ -29,8 +52,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .home-title{font-size:22px;font-weight:700;margin-bottom:6px;}
 .home-sub{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5;}
 .home-date{font-size:13px;color:var(--muted);margin-top:14px;}
-.home-status-box{background:var(--green-lt);border:1px solid rgba(29,158,117,.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#065f46;display:none;}
-.home-status-box.warn{background:var(--orange-lt);border-color:#fde68a;color:#92400e;}
+.home-status-box{background:var(--green-lt);border:1px solid rgba(29,158,117,.3);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--green);display:none;}
+.home-status-box.warn{background:var(--orange-lt);border-color:rgba(245,158,11,.35);color:var(--orange);}
 /* CONTAINER */
 .ctr{max-width:680px;margin:0 auto;padding:14px 12px 60px;}
 /* TABS */
@@ -56,7 +79,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-gray{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
 .btn-red{background:var(--red-lt);color:var(--red);border:1px solid rgba(226,75,74,.25);}
 .btn-purple{background:var(--purple-lt);color:var(--purple);border:1px solid #ddd6fe;}
-.btn-orange{background:var(--orange-lt);color:#b45309;border:1px solid #fde68a;}
+.btn-orange{background:var(--orange-lt);color:#b45309;border:1px solid rgba(245,158,11,.35);}
 .btn-copy{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;}
 .btn-big{padding:14px 28px;font-size:16px;border-radius:12px;}
 .btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
@@ -70,7 +93,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .func-horario em{font-style:normal;color:#1D9E75;}
 .func-horario-sep{color:var(--muted);font-size:12px;margin:0 4px;}
 .func-horario-vazio{color:var(--muted);background:var(--surface);border-color:var(--border);font-weight:600;font-family:inherit;}
-.func-consumo{font-size:12px;color:var(--muted);margin-top:4px;}
+.func-consumo{font-size:12px;color:var(--text);margin-top:4px;}
 .func-status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex-shrink:0;}
 .func-status-dot.presente{background:var(--green);box-shadow:0 0 0 2px var(--green-lt);}
 .func-status-dot.saiu{background:var(--muted);}
@@ -87,8 +110,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .item-plat{font-size:11px;color:var(--muted);margin-top:1px;}
 .item-val{font-size:14px;font-weight:700;flex-shrink:0;}
 .item-actions{display:flex;gap:5px;flex-shrink:0;}
-.dep-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--orange-lt);border:1px solid #fde68a;border-radius:7px;margin-bottom:6px;}
-.devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 11px;background:#fff8f0;border:1px solid #ffd8a8;border-radius:7px;margin-bottom:6px;gap:8px;}
+.dep-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:6px;}
+.devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:5px;gap:8px;}
 .pill{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
 .pill-func{background:#e8f5e9;color:#2e7d32;}
 .pill-free{background:var(--purple-lt);color:var(--purple);}
@@ -121,15 +144,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .piz-val{font-size:15px;font-weight:700;width:34px;text-align:center;border:1px solid transparent;border-radius:6px;padding:4px 2px;background:transparent;color:var(--text);font-family:inherit;-moz-appearance:textfield;}
 .piz-val::-webkit-outer-spin-button,.piz-val::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .piz-val:focus{border-color:var(--green);background:var(--surface);outline:none;}
-.piz-total{background:var(--green-lt);border:1px solid rgba(29,158,117,.3);border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700;color:#065f46;}
+.piz-total{background:var(--green-lt);border:1px solid rgba(29,158,117,.3);border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700;color:var(--green);}
 /* IMPORTAR */
 .import-textarea{width:100%;min-height:220px;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;font-family:monospace;resize:vertical;background:var(--surface);color:var(--text);}
 .import-preview{margin-top:14px;}
-.imp-line{padding:8px 10px;border-radius:7px;margin-bottom:5px;font-size:13px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border:1px solid var(--border);background:var(--surface2);}
-.imp-line.warn{background:var(--orange-lt);border-color:#fde68a;}
+.imp-line{padding:5px 8px;border-radius:6px;margin-bottom:3px;font-size:11px;line-height:1.35;display:flex;justify-content:space-between;align-items:flex-start;gap:6px;border:1px solid var(--border);background:var(--surface2);}
+.imp-line.warn{background:var(--orange-lt);border-color:rgba(245,158,11,.35);}
 .imp-line.ok{background:var(--green-lt);border-color:rgba(29,158,117,.25);}
-.imp-tag{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:99px;background:var(--surface);color:var(--muted);flex-shrink:0;}
-.imp-summary{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6;}
+.imp-tag{font-size:9px;font-weight:700;text-transform:uppercase;padding:1px 5px;border-radius:99px;background:var(--surface);color:var(--muted);flex-shrink:0;}
+.imp-summary{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
 /* SCROLL FAB */
 .scroll-fab{position:fixed;right:16px;bottom:22px;width:46px;height:46px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);z-index:150;display:flex;align-items:center;justify-content:center;transition:transform .15s, opacity .15s;}
 .scroll-fab:active{transform:scale(0.92);}
@@ -146,6 +169,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="sync-status" style="font-size:11px;color:var(--muted);">Conectando...</div>
   </div>
   <div id="hdr-right" style="font-size:12px;color:var(--muted);flex-shrink:0;"></div>
+  <button class="theme-btn" id="theme-btn" onclick="cicleTheme()" title="Mudar tema">🎨</button>
 </div>
 
 <!-- HOME -->
@@ -179,16 +203,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="sec-hdr"><div class="sec-title">💰 Caixa</div></div>
         <div class="sec-body">
           <div class="row2" style="margin-bottom:10px;">
-            <div class="fg"><label>Caixa Inicial (R$)</label><input type="number" id="cx-ini" placeholder="0,00" step="1" oninput="autoSave()"/></div>
-            <div class="fg"><label>Caixa Final (R$)</label><input type="number" id="cx-fin" placeholder="0,00" step="1" oninput="autoSave()"/></div>
+            <div class="fg"><label>Caixa Inicial (R$)</label><input type="text" inputmode="numeric" class="money-input" id="cx-ini" placeholder="0,00" oninput="autoSave()"/></div>
+            <div class="fg"><label>Caixa Final (R$)</label><input type="text" inputmode="numeric" class="money-input" id="cx-fin" placeholder="0,00" oninput="autoSave()"/></div>
           </div>
-          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">DEPÓSITOS DO DIA</div>
-          <div id="dep-list"></div>
-          <div class="row2" style="margin-top:6px;">
-            <div class="fg"><label>Valor (R$)</label><input type="number" id="dep-val" placeholder="ex: 1500" step="1"/></div>
-            <div class="fg"><label>Quem fez</label><input type="text" id="dep-quem" placeholder="ex: Gustavo"/></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);">DEPÓSITOS DO DIA</div>
+            <button class="btn btn-orange" style="padding:4px 10px;font-size:12px;" onclick="abrirModalDep()">+ Depósito</button>
           </div>
-          <div class="btn-row"><button class="btn btn-orange" onclick="addDep()">+ Depósito</button></div>
+          <div id="dep-list"><div class="empty">Nenhum depósito hoje ainda.</div></div>
         </div>
       </div>
 
@@ -257,7 +279,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="tab-finalizar" style="display:none;">
       <div class="fin-box">
         <div style="font-size:15px;font-weight:700;margin-bottom:4px;">✅ Relatório do dia</div>
-        <div style="font-size:13px;color:#065f46;">Confira abaixo e copie para enviar.</div>
+        <div style="font-size:13px;color:var(--green);">Confira abaixo e copie para enviar.</div>
       </div>
       <div class="rel-preview" id="rel-preview"></div>
       <div class="btn-row">
@@ -305,7 +327,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       </div>
     </div>
     <div id="edit-panel" style="display:none;">
-      <div style="background:var(--orange-lt);border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#92400e;">
+      <div style="background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--orange);">
         ✏️ Editando relatório de <strong id="edit-data-label"></strong>. As alterações são salvas automaticamente.
       </div>
       <!-- mesmas seções de edição -->
@@ -313,16 +335,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="sec-hdr"><div class="sec-title">💰 Caixa</div></div>
         <div class="sec-body">
           <div class="row2" style="margin-bottom:10px;">
-            <div class="fg"><label>Caixa Inicial (R$)</label><input type="number" id="ecx-ini" placeholder="0,00" step="1" oninput="editAutoSave()"/></div>
-            <div class="fg"><label>Caixa Final (R$)</label><input type="number" id="ecx-fin" placeholder="0,00" step="1" oninput="editAutoSave()"/></div>
+            <div class="fg"><label>Caixa Inicial (R$)</label><input type="text" inputmode="numeric" class="money-input" id="ecx-ini" placeholder="0,00" oninput="editAutoSave()"/></div>
+            <div class="fg"><label>Caixa Final (R$)</label><input type="text" inputmode="numeric" class="money-input" id="ecx-fin" placeholder="0,00" oninput="editAutoSave()"/></div>
           </div>
-          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">DEPÓSITOS</div>
-          <div id="edep-list"></div>
-          <div class="row2" style="margin-top:6px;">
-            <div class="fg"><label>Valor (R$)</label><input type="number" id="edep-val" placeholder="ex: 1500" step="1"/></div>
-            <div class="fg"><label>Quem fez</label><input type="text" id="edep-quem" placeholder="ex: Gustavo"/></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);">DEPÓSITOS</div>
+            <button class="btn btn-orange" style="padding:4px 10px;font-size:12px;" onclick="eAbrirModalDep()">+ Depósito</button>
           </div>
-          <div class="btn-row"><button class="btn btn-orange" onclick="eAddDep()">+ Depósito</button></div>
+          <div id="edep-list"><div class="empty">Nenhum depósito ainda.</div></div>
         </div>
       </div>
       <div class="sec">
@@ -389,8 +409,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="mf-free-fields" style="display:none;background:var(--purple-lt);border-radius:8px;padding:10px;margin-bottom:10px;">
       <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:8px;">💜 FREELANCE</div>
       <div class="row2">
-        <div class="fg"><label>R$/hora</label><input type="number" id="mf-vlrh" placeholder="ex: 12" step="0.01" oninput="calcFree()"/></div>
-        <div class="fg"><label>Total pago (R$)</label><input type="number" id="mf-total" placeholder="calculado" step="0.01"/></div>
+        <div class="fg"><label>R$/hora</label><input type="text" inputmode="numeric" class="money-input" id="mf-vlrh" placeholder="0,00" oninput="calcFree()"/></div>
+        <div class="fg"><label>Total pago (R$)</label><input type="text" inputmode="numeric" class="money-input" id="mf-total" placeholder="0,00"/></div>
       </div>
       <div id="mf-calc" style="font-size:12px;color:var(--purple);margin-top:5px;font-weight:600;"></div>
     </div>
@@ -410,7 +430,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <input type="hidden" id="mi-idx" value="-1"/>
     <input type="hidden" id="mi-ctx" value="main"/>
     <div class="row2" style="margin-bottom:10px;">
-      <div class="fg"><label>Valor (R$)</label><input type="number" id="mi-val" placeholder="ex: 45.00" step="0.01"/></div>
+      <div class="fg"><label>Valor (R$)</label><input type="text" inputmode="numeric" class="money-input" id="mi-val" placeholder="0,00"/></div>
       <div class="fg" id="mi-plat-wrap"><label>Plataforma</label>
         <select id="mi-plat">
           <option value="Balcão">Balcão</option>
@@ -429,15 +449,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- MODAL DEPÓSITO -->
+<div class="modal-bg" id="modal-dep">
+  <div class="modal-box">
+    <div class="modal-title" id="md2-title">Adicionar Depósito</div>
+    <input type="hidden" id="md2-idx" value="-1"/>
+    <input type="hidden" id="md2-ctx" value="main"/>
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="fg"><label>Valor (R$)</label><input type="text" inputmode="numeric" class="money-input" id="md2-val" placeholder="0,00"/></div>
+      <div class="fg"><label>Quem fez</label><input type="text" id="md2-quem" placeholder="ex: Gustavo"/></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="salvarDep()">Salvar</button>
+      <button class="btn btn-gray" onclick="fecharModal('modal-dep')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DEVIA -->
 <div class="modal-bg" id="modal-devia">
   <div class="modal-box">
     <div class="modal-title">Anotação / Devendo</div>
     <input type="hidden" id="md-idx" value="-1"/>
     <input type="hidden" id="md-ctx" value="main"/>
-    <div class="fg" style="margin-bottom:10px;"><label>Nome / descrição</label><input type="text" id="md-nome" placeholder="ex: Moto João"/></div>
+    <div class="fg" style="margin-bottom:10px;"><label>Nome / descrição</label><textarea id="md-nome" placeholder="ex: Moto João" rows="2" style="resize:vertical;"></textarea></div>
     <div class="row2" style="margin-bottom:10px;">
-      <div class="fg"><label>Valor (R$) — opcional</label><input type="number" id="md-val" placeholder="ex: 18.00" step="0.01"/></div>
+      <div class="fg"><label>Valor (R$) — opcional</label><input type="text" inputmode="numeric" class="money-input" id="md-val" placeholder="0,00"/></div>
       <div class="fg"><label>Detalhe</label><input type="text" id="md-det" placeholder="ex: maquininha..."/></div>
     </div>
     <div class="btn-row">
@@ -498,6 +535,29 @@ function getDeviceId() {
   }
 }
 const DEVICE_ID = getDeviceId();
+
+// ===== TEMA (claro / escuro / neon) =====
+const THEME_KEY = 'piz_theme';
+const THEMES = ['light','dark','neon'];
+const THEME_ICON = { light:'🎨', dark:'🌙', neon:'⚡' };
+function applyTheme(theme){
+  document.body.classList.remove('theme-dark','theme-neon');
+  if(theme==='dark') document.body.classList.add('theme-dark');
+  else if(theme==='neon') document.body.classList.add('theme-neon');
+  const btn = document.getElementById('theme-btn');
+  if(btn) btn.textContent = THEME_ICON[theme] || '🎨';
+}
+function getTheme(){
+  try { return localStorage.getItem(THEME_KEY) || 'light'; } catch(e){ return 'light'; }
+}
+function cicleTheme(){
+  const atual = getTheme();
+  const next = THEMES[(THEMES.indexOf(atual)+1) % THEMES.length];
+  try { localStorage.setItem(THEME_KEY, next); } catch(e){}
+  applyTheme(next);
+}
+applyTheme(getTheme());
+
 
 function readLocalCache() {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY_FALLBACK) || '{}'); }
@@ -674,6 +734,48 @@ function parseMoney(value) {
   return Number(s);
 }
 
+// ===== MÁSCARA DE MOEDA (estilo calculadora) =====
+// Formata uma sequência de DÍGITOS DIGITADOS (centavos) para o texto "0,00"
+// — usado enquanto a pessoa está digitando no campo.
+function formatMoneyInput(raw){
+  const digits = String(raw??'').replace(/[^\d]/g,'');
+  if(!digits) return '';
+  const n = parseInt(digits,10);
+  const cents = (n/100).toFixed(2).replace('.', ',');
+  return cents.replace(/\B(?=(\d{3})+(?!\d)(?=,))/g, '.');
+}
+// Formata um NÚMERO EM REAIS já existente (ex: vindo do banco: 367 ou 367.5)
+// para o texto "367,00" — usado ao carregar um valor salvo num campo.
+function formatMoneyValue(num){
+  const n = parseFloat(num);
+  if(num===null || num===undefined || num==='' || isNaN(n)) return '';
+  return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+// Liga a máscara em todo campo .money-input: cada dígito digitado entra pela
+// direita, como numa calculadora — "25" vira "0,25", continuar digitando "2500"
+// vira "25,00". Funciona tanto para campos já existentes na carga da página
+// quanto para os criados depois (modais), via delegação de evento.
+document.addEventListener('input', function(e){
+  if(!e.target.classList || !e.target.classList.contains('money-input')) return;
+  const el = e.target;
+  const prevDigits = (el.dataset.rawDigits||'').replace(/[^\d]/g,'');
+  // pega só os dígitos do valor atual do campo (após a digitação do navegador)
+  const curDigits = el.value.replace(/[^\d]/g,'');
+  el.dataset.rawDigits = curDigits;
+  el.value = formatMoneyInput(curDigits);
+}, true);
+// Preenche um campo .money-input já com a máscara aplicada (usado ao carregar
+// dados salvos ou abrir um item para edição — nunca escrever .value direto
+// nesses campos, sempre por aqui, para não exibir "367" em vez de "367,00").
+function setMoneyField(id, valor){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(valor===null || valor===undefined || valor===''){ el.value=''; el.dataset.rawDigits=''; return; }
+  el.value = formatMoneyValue(valor);
+  el.dataset.rawDigits = el.value.replace(/[^\d]/g,'');
+}
+
+
 // Vira o "dia" do relatório às 06:00, não à meia-noite — a pizzaria fecha perto
 // das 02:00, então de madrugada (00:00–05:59) o relatório ainda pertence ao dia
 // comercial anterior (ex: 02:30 de uma sexta ainda conta como quinta).
@@ -733,8 +835,8 @@ async function abrirRelatorio() {
   // Abre a página IMEDIATAMENTE com estado vazio ou cache
   const cached = window._getCached ? window._getCached(currentDate) : null;
   state = cached ? cloneState(cached) : emptyState();
-  document.getElementById('cx-ini').value = state.cxIni||'';
-  document.getElementById('cx-fin').value = state.cxFin||'';
+  setMoneyField('cx-ini', state.cxIni);
+  setMoneyField('cx-fin', state.cxFin);
   render();
   showPage('page-rel');
   switchTab('anotar');
@@ -748,8 +850,8 @@ async function abrirRelatorio() {
     window._load(currentDate).then(data => {
       if(data && JSON.stringify(normalizeState(data)) !== JSON.stringify(normalizeState(state))) {
         state = cloneState(data);
-        document.getElementById('cx-ini').value = state.cxIni||'';
-        document.getElementById('cx-fin').value = state.cxFin||'';
+        setMoneyField('cx-ini', state.cxIni);
+        setMoneyField('cx-fin', state.cxFin);
         render();
       }
     });
@@ -812,27 +914,27 @@ function switchVerTab(name) {
 
 // ===== SAVE =====
 function autoSave() {
-  state.cxIni=document.getElementById('cx-ini').value;
-  state.cxFin=document.getElementById('cx-fin').value;
+  state.cxIni=parseMoney(document.getElementById('cx-ini').value)||'';
+  state.cxFin=parseMoney(document.getElementById('cx-fin').value)||'';
   clearTimeout(autoSaveTimer);
   autoSaveTimer=setTimeout(()=>{ if(!currentDate) currentDate = todayStr(); window._save(currentDate,state); },900);
 }
 function save() {
   if(!currentDate) currentDate = todayStr();
-  state.cxIni=document.getElementById('cx-ini').value;
-  state.cxFin=document.getElementById('cx-fin').value;
+  state.cxIni=parseMoney(document.getElementById('cx-ini').value)||'';
+  state.cxFin=parseMoney(document.getElementById('cx-fin').value)||'';
   window._save(currentDate,state);
 }
 function editAutoSave() {
-  editState.cxIni=document.getElementById('ecx-ini').value;
-  editState.cxFin=document.getElementById('ecx-fin').value;
+  editState.cxIni=parseMoney(document.getElementById('ecx-ini').value)||'';
+  editState.cxFin=parseMoney(document.getElementById('ecx-fin').value)||'';
   clearTimeout(editSaveTimer);
   editSaveTimer=setTimeout(()=>{ if(editDate) window._save(editDate,editState); },900);
 }
 function editSave() {
   if(!editDate) return;
-  editState.cxIni=document.getElementById('ecx-ini').value;
-  editState.cxFin=document.getElementById('ecx-fin').value;
+  editState.cxIni=parseMoney(document.getElementById('ecx-ini').value)||'';
+  editState.cxFin=parseMoney(document.getElementById('ecx-fin').value)||'';
   window._save(editDate,editState);
 }
 
@@ -841,45 +943,57 @@ function render() { state = normalizeState(state); renderDep(); renderFunc(); re
 function eRender() { editState = normalizeState(editState); eRenderDep(); eRenderFunc(); eRenderVendas(); eRenderDesp(); eRenderDevia(); eRenderPizzas(); }
 
 // ===== DEPÓSITOS =====
+function depCard(d,i,ctx){
+  return `<div class="dep-card">
+      <div><span style="font-weight:700;">R$ ${fmt(d.val)}</span>${d.quem?` — ${escapeHTML(d.quem)}`:''}</div>
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button onclick="${ctx==='edit'?'eEditDep':'editDep'}(${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
+        <button onclick="${ctx==='edit'?'eRemDep':'remDep'}(${i})" class="btn btn-red" style="padding:3px 7px;font-size:11px;">✕</button>
+      </div>
+    </div>`;
+}
 function renderDep() {
   const el=document.getElementById('dep-list');
-  state = normalizeState(state); if(!state.depositos.length){el.innerHTML='';return;}
+  state = normalizeState(state);
+  if(!state.depositos.length){el.innerHTML='<div class="empty">Nenhum depósito hoje ainda.</div>';return;}
   const total=state.depositos.reduce((s,d)=>s+parseFloat(d.val||0),0);
-  el.innerHTML=state.depositos.map((d,i)=>`
-    <div class="dep-card">
-      <div><span style="font-weight:700;">R$ ${fmt(d.val)}</span>${d.quem?` — ${escapeHTML(d.quem)}`:''}</div>
-      <button onclick="remDep(${i})" class="btn btn-red" style="padding:3px 8px;font-size:11px;">✕</button>
-    </div>`).join('')+(state.depositos.length>1?`<div style="font-size:13px;font-weight:700;color:var(--orange);padding:4px 2px;">Total: R$ ${fmt(total)}</div>`:'');
+  el.innerHTML=state.depositos.map((d,i)=>depCard(d,i,'main')).join('')+(state.depositos.length>1?`<div style="font-size:13px;font-weight:700;color:var(--orange);padding:4px 2px;">Total: R$ ${fmt(total)}</div>`:'');
 }
-function addDep(){
-  const val=document.getElementById('dep-val').value;
-  const quem=document.getElementById('dep-quem').value.trim();
-  if(!val){alert('Digite o valor.');return;}
-  state.depositos.push({val:parseMoney(val),quem});
-  document.getElementById('dep-val').value='';document.getElementById('dep-quem').value='';
-  renderDep();save();
-}
+function abrirModalDep(){_openModalDep(-1,'main',null);}
+function editDep(i){_openModalDep(i,'main',state.depositos[i]);}
 function remDep(i){if(!confirm('Excluir este depósito?'))return;state.depositos.splice(i,1);renderDep();save();}
 
 function eRenderDep() {
   const el=document.getElementById('edep-list');
-  editState = normalizeState(editState); if(!editState.depositos.length){el.innerHTML='';return;}
+  editState = normalizeState(editState);
+  if(!editState.depositos.length){el.innerHTML='<div class="empty">Nenhum depósito ainda.</div>';return;}
   const total=editState.depositos.reduce((s,d)=>s+parseFloat(d.val||0),0);
-  el.innerHTML=editState.depositos.map((d,i)=>`
-    <div class="dep-card">
-      <div><span style="font-weight:700;">R$ ${fmt(d.val)}</span>${d.quem?` — ${escapeHTML(d.quem)}`:''}</div>
-      <button onclick="eRemDep(${i})" class="btn btn-red" style="padding:3px 8px;font-size:11px;">✕</button>
-    </div>`).join('')+(editState.depositos.length>1?`<div style="font-size:13px;font-weight:700;color:var(--orange);padding:4px 2px;">Total: R$ ${fmt(total)}</div>`:'');
+  el.innerHTML=editState.depositos.map((d,i)=>depCard(d,i,'edit')).join('')+(editState.depositos.length>1?`<div style="font-size:13px;font-weight:700;color:var(--orange);padding:4px 2px;">Total: R$ ${fmt(total)}</div>`:'');
 }
-function eAddDep(){
-  const val=document.getElementById('edep-val').value;
-  const quem=document.getElementById('edep-quem').value.trim();
-  if(!val){alert('Digite o valor.');return;}
-  editState.depositos.push({val:parseMoney(val),quem});
-  document.getElementById('edep-val').value='';document.getElementById('edep-quem').value='';
-  eRenderDep();editSave();
-}
+function eAbrirModalDep(){_openModalDep(-1,'edit',null);}
+function eEditDep(i){_openModalDep(i,'edit',editState.depositos[i]);}
 function eRemDep(i){if(!confirm('Excluir este depósito?'))return;editState.depositos.splice(i,1);eRenderDep();editSave();}
+
+function _openModalDep(idx,ctx,d){
+  document.getElementById('md2-idx').value=idx;
+  document.getElementById('md2-ctx').value=ctx;
+  document.getElementById('md2-title').textContent=idx>=0?'Editar Depósito':'Adicionar Depósito';
+  setMoneyField('md2-val', d?d.val:'');
+  document.getElementById('md2-quem').value=d?d.quem||'':'';
+  abrirModal('modal-dep');
+}
+function salvarDep(){
+  const val=parseMoney(document.getElementById('md2-val').value);
+  const quem=document.getElementById('md2-quem').value.trim();
+  if(isNaN(val)){alert('Digite o valor.');return;}
+  const reg={val,quem};
+  const idx=parseInt(document.getElementById('md2-idx').value);
+  const ctx=document.getElementById('md2-ctx').value;
+  const arr=ctx==='edit'?editState.depositos:state.depositos;
+  if(idx>=0)arr[idx]=reg;else arr.push(reg);
+  fecharModal('modal-dep');
+  if(ctx==='edit'){eRenderDep();editSave();}else{renderDep();save();}
+}
 
 // ===== FUNCIONÁRIOS =====
 // Determina se o funcionário ainda está trabalhando (último turno sem saída
@@ -902,7 +1016,7 @@ function funcCard(f, i, ctx) {
   const turnosHtml = turnos.length
     ? turnos.map(t=>`<span class="func-horario">${t.ent||'?'} – ${t.sai||'<em>agora</em>'}</span>`).join('<span class="func-horario-sep">|</span>')
     : '<span class="func-horario func-horario-vazio">sem horário</span>';
-  const consumoHtml = f.consumo ? `<div class="func-consumo">🍽️ ${escapeHTML(f.consumo)}</div>` : '';
+  const consumoHtml = f.consumo ? `<div class="func-consumo"><strong>Consumo:</strong> <strong>${escapeHTML(f.consumo)}</strong></div>` : '';
   const pag=f.freelance&&f.totalPago?`<div class="func-pag">>>>>>>>> R$ ${fmt(f.totalPago)} Pago!!!!${f.horasStr?` (${f.horasStr})`:''}</div>`:'';
   const obs=f.obs?`<div class="func-obs">📝 ${escapeHTML(f.obs)}</div>`:'';
   const statusDot = status==='presente' ? '<span class="func-status-dot presente" title="Ainda no trabalho"></span>' : (status==='saiu' ? '<span class="func-status-dot saiu" title="Já saiu"></span>' : '');
@@ -982,8 +1096,8 @@ function _openModalFunc(idx,ctx,f,forceFreelance){
   document.getElementById('mf-nome').value=f?f.nome||'':'';
   document.getElementById('mf-consumo').value=f?f.consumo||'':'';
   document.getElementById('mf-obs').value=f?f.obs||'':'';
-  document.getElementById('mf-vlrh').value=f?f.vlrHora||'':'';
-  document.getElementById('mf-total').value=f?f.totalPago||'':'';
+  setMoneyField('mf-vlrh', f?f.vlrHora:'');
+  setMoneyField('mf-total', f?f.totalPago:'');
   document.getElementById('mf-calc').textContent='';
   document.getElementById('mf-turnos').innerHTML='';
   turnoForms=[];
@@ -1010,7 +1124,7 @@ function calcHorasTurnos(turnos){
 
 function calcFree(){
   const turnos=getTurnos();const horas=calcHorasTurnos(turnos);const vlr=parseMoney(document.getElementById('mf-vlrh').value)||0;const el=document.getElementById('mf-calc');
-  if(horas&&vlr>0){const total=horas.total*vlr;document.getElementById('mf-total').value=total.toFixed(2);el.textContent=`${horas.str} × R$ ${fmt(vlr)}/h = R$ ${fmt(total)}`;}else{el.textContent='';}
+  if(horas&&vlr>0){const total=horas.total*vlr;setMoneyField('mf-total', total.toFixed(2));el.textContent=`${horas.str} × R$ ${fmt(vlr)}/h = R$ ${fmt(total)}`;}else{el.textContent='';}
 }
 
 function salvarFunc(){
@@ -1060,7 +1174,7 @@ function _openModalItem(idx,ctx,tipo,it){
   document.getElementById('mi-tipo').value=tipo;document.getElementById('mi-idx').value=idx;document.getElementById('mi-ctx').value=ctx;
   document.getElementById('mi-title').textContent=tipo==='venda'?(idx>=0?'Editar Venda':'Adicionar Venda'):(idx>=0?'Editar Despesa':'Adicionar Despesa');
   document.getElementById('mi-plat-wrap').style.display=tipo==='venda'?'flex':'none';
-  document.getElementById('mi-val').value=it?it.val:'';document.getElementById('mi-desc').value=it?it.desc||'':'';
+  setMoneyField('mi-val', it?it.val:'');document.getElementById('mi-desc').value=it?it.desc||'':'';
   document.getElementById('mi-plat').value=it&&it.plat?it.plat:'Balcão';
   abrirModal('modal-item');
 }
@@ -1082,13 +1196,13 @@ function eRemItem(tipo,i){const it=tipo==='venda'?editState.vendas[i]:editState.
 function deviaCard(d,i,ctx){
   return `<div class="devia-card">
     <div>
-      <div style="font-weight:700;font-size:13px;">${escapeHTML(d.nome)}</div>
-      ${d.val?`<div style="color:var(--orange);font-size:13px;font-weight:600;">R$ ${fmt(d.val)}</div>`:''}
-      ${d.det?`<div style="font-size:12px;color:var(--muted);">${escapeHTML(d.det)}</div>`:''}
+      <div style="font-weight:700;font-size:12px;line-height:1.4;white-space:pre-line;">${escapeHTML(d.nome)}</div>
+      ${d.val?`<div style="color:var(--orange);font-size:12px;font-weight:600;margin-top:1px;">R$ ${fmt(d.val)}</div>`:''}
+      ${d.det?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${escapeHTML(d.det)}</div>`:''}
     </div>
-    <div style="display:flex;gap:5px;flex-shrink:0;">
-      <button onclick="${ctx==='edit'?'eEditDevia':'editDevia'}(${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
-      <button onclick="${ctx==='edit'?'eRemDevia':'remDevia'}(${i})" class="btn btn-red" style="padding:3px 7px;font-size:11px;">✕</button>
+    <div style="display:flex;gap:4px;flex-shrink:0;">
+      <button onclick="${ctx==='edit'?'eEditDevia':'editDevia'}(${i})" class="btn btn-gray" style="padding:2px 6px;font-size:10px;">✏️</button>
+      <button onclick="${ctx==='edit'?'eRemDevia':'remDevia'}(${i})" class="btn btn-red" style="padding:2px 6px;font-size:10px;">✕</button>
     </div>
   </div>`;
 }
@@ -1162,7 +1276,7 @@ function eEditDevia(i){_openModalDevia(i,'edit',editState.devias[i]);}
 
 function _openModalDevia(idx,ctx,d){
   document.getElementById('md-idx').value=idx;document.getElementById('md-ctx').value=ctx;
-  document.getElementById('md-nome').value=d?d.nome||'':'';document.getElementById('md-val').value=d?d.val||'':'';document.getElementById('md-det').value=d?d.det||'':'';
+  document.getElementById('md-nome').value=d?d.nome||'':'';setMoneyField('md-val', d?d.val:'');document.getElementById('md-det').value=d?d.det||'':'';
   abrirModal('modal-devia');
 }
 
@@ -1181,7 +1295,7 @@ function eRemDevia(i){const d=editState.devias[i];if(!confirm(`Excluir "${d?d.no
 
 // ===== GERAR TEXTO =====
 function gerarTexto(st,dk){
-  let txt=`📅 *${fmtDate(dk)}*\n\n`;
+  let txt=`*${fmtDate(dk)}*\n\n`;
   txt+=`Caixa Inicial: ${st.cxIni?'R$ '+fmt(st.cxIni):''}\n`;
   if(st.depositos&&st.depositos.length){
     const total=st.depositos.reduce((s,d)=>s+parseFloat(d.val||0),0);
@@ -1193,8 +1307,19 @@ function gerarTexto(st,dk){
     st.funcionarios.forEach(f=>{
       const turnos=(f.turnos||[]).filter(t=>t.ent||t.sai);
       let linha=f.nome+': ';
-      if(turnos.length===1&&f.consumo){linha+=`${turnos[0].ent} - ${f.consumo} - ${turnos[0].sai}`;}
-      else if(turnos.length){linha+=turnos.map(t=>`${t.ent} - ${t.sai}`).join(' | ');if(f.consumo)linha+=` (${f.consumo})`;}
+      if(turnos.length===1&&f.consumo){
+        linha+=`${turnos[0].ent} - ${f.consumo} - ${turnos[0].sai}`;
+      } else if(turnos.length>1&&f.consumo){
+        // Com múltiplos turnos, o consumo entra dentro do último turno, entre
+        // sua entrada e saída (ex: "10:00 - 12:05 | 14:20 - lata - 15:05"),
+        // nunca solto em parênteses depois de tudo.
+        const partes = turnos.slice(0,-1).map(t=>`${t.ent} - ${t.sai}`);
+        const ultimoTurno = turnos[turnos.length-1];
+        partes.push(`${ultimoTurno.ent} - ${f.consumo} - ${ultimoTurno.sai}`);
+        linha += partes.join(' | ');
+      } else if(turnos.length){
+        linha+=turnos.map(t=>`${t.ent} - ${t.sai}`).join(' | ');
+      }
       if(f.obs)linha+=` [${escapeHTML(f.obs)}]`;
       if(f.freelance&&f.totalPago)linha+=` >>>>>>>> R$ ${fmt(f.totalPago)} Pago!!!!${f.horasStr?` (${f.horasStr})`:''}`;
       txt+=linha+'\n';
@@ -1245,6 +1370,44 @@ function extrairHorarios(s){
   return m || [];
 }
 
+// ===== SIMILARIDADE DE NOMES (para detectar duplicados com grafia diferente) =====
+// Normaliza removendo acentos/pontuação e aplicando equivalências fonéticas
+// comuns em nomes próprios no PT-BR (y≈i, consoantes duplicadas≈simples),
+// para que "Lydmar", "Lidimar", "Lydimar" e "Liddimar" caiam na mesma forma.
+function normalizaNome(s){
+  let n = String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+  n = n.replace(/y/g, 'i');
+  n = n.replace(/([a-z])\1+/g, '$1');
+  return n;
+}
+function levenshtein(a, b){
+  const m=a.length, n=b.length;
+  if(m===0) return n;
+  if(n===0) return m;
+  const dp = Array.from({length:m+1}, ()=>new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+// Retorna um valor de 0 a 1 (1 = nomes idênticos depois de normalizados).
+// Limiar de 0.80 cobre variações reais (Lydmar/Lidimar/Lydimar/Liddimar,
+// Barbara/Bárbara, Hellen/Hellem, Romeo/Romel) sem confundir nomes diferentes
+// parecidos (Antonio/Anthony fica em ~0.71, abaixo do limiar).
+function similaridadeNomes(a, b){
+  const na = normalizaNome(a), nb = normalizaNome(b);
+  if(!na || !nb) return 0;
+  if(na===nb) return 1;
+  const dist = levenshtein(na, nb);
+  const maxLen = Math.max(na.length, nb.length);
+  return 1 - dist/maxLen;
+}
+const LIMIAR_SIMILARIDADE_NOME = 0.80;
+
 function parseRelatorioTexto(raw){
   const linhas = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
   const result = {
@@ -1253,6 +1416,7 @@ function parseRelatorioTexto(raw){
     depositos:[], // {val, quem}
     funcionarios:[], // {nome, turnos, consumo, obs, warn, rawLine}
     vendas:[], despesas:[], devias:[],
+    pizzas:{p:0,m:0,g:0,gg:0},
     ignoradas:[] // {texto, motivo}
   };
   let secao = null; // null | 'vendas' | 'despesas' | 'devemos'
@@ -1265,16 +1429,37 @@ function parseRelatorioTexto(raw){
   const reDespesasHdr = /^despesas\s*:?\s*$/i;
   const reDevemosHdr = /^devemos\s*:?\s*$/i;
   const rePizza = /^pizzas?\s+(pequenas?|m[eé]dias?|grandes?|gigantes?)\s*:?/i;
+  // Linha de entregador (com ou sem valor colado na mesma linha, separado por
+  // tab ou múltiplos espaços — comum ao copiar de planilha/tabela).
+  const reEntregadorComValor = /^(entregador\s*:\s*.+?)[ \t]+([\d.,]+)\s*$/i;
+  const reEntregador = /^entregador\s*:\s*.+$/i;
+  const reTelefoneLinha = /^telefone\s*:\s*.+$/i;
+  const reSoValorRS = /^r\$\s*([\d.,]+)\s*$/i;
+  // "Nome deve 120" ou "Nome deve R$ 120,00" — formato livre de anotação de
+  // dívida fora do bloco "devemos:"
+  const reNomeDeve = /^(.{1,40}?)\s+deve\s+(?:r\$\s*)?([\d.,]+)\s*$/i;
 
-  for(const linhaOriginal of linhas){
-    const linha = linhaOriginal;
+  for(let idx=0; idx<linhas.length; idx++){
+    const linha = linhas[idx];
 
     // data tipo 25.06 ou 25/06/2026
     let mm;
     if((mm=linha.match(reData))){ result.dataDetectada = linha; continue; }
 
-    // pizzas no texto colado: sempre ignoradas (contador é só pelos botões +/-)
-    if(rePizza.test(linha)){ result.ignoradas.push({texto:linha, motivo:'Contagem de pizzas (ignorada — use os botões +/- )'}); continue; }
+    // pizzas no texto colado: soma ao contador atual (mesmos botões +/-)
+    let mPizza;
+    if((mPizza=linha.match(rePizza))){
+      const tipoTxt = mPizza[1].toLowerCase();
+      const tipoKey = tipoTxt.startsWith('peq') ? 'p' : tipoTxt.startsWith('m') ? 'm' : tipoTxt.startsWith('gig') ? 'gg' : 'g';
+      const resto = linha.slice(mPizza[0].length).replace(/^:?\s*/, '').trim();
+      const qtd = parseInt(resto, 10);
+      if(!isNaN(qtd)){
+        result.pizzas[tipoKey] = (result.pizzas[tipoKey]||0) + qtd;
+      } else {
+        result.ignoradas.push({texto:linha, motivo:'Quantidade de pizza não reconhecida'});
+      }
+      continue;
+    }
 
     // cabeçalhos de seção
     if(reVendasHdr.test(linha)){ secao='vendas'; continue; }
@@ -1305,6 +1490,60 @@ function parseRelatorioTexto(raw){
       const quem=resto.includes('-') ? resto.split('-').slice(1).join('-').trim() : '';
       result.depositos.push({val:isNaN(v)?null:v, quem, pendente:isNaN(v)});
       continue;
+    }
+
+    // ===== DEVENDO (em qualquer ponto do texto, mesmo dentro de outra seção) =====
+    // Esses padrões são específicos o bastante (palavra "deve", ou "Entregador:"
+    // seguido de "Telefone:") para nunca serem confundidos com venda/despesa —
+    // por isso são checados antes de decidir a seção atual. Isso cobre o caso
+    // comum de colar essas anotações soltas depois do bloco de Despesas, sem
+    // nenhum cabeçalho novo avisando a troca de assunto.
+
+    // 1) "Nome deve 120" ou "Nome deve R$ 120,00"
+    let mDeve;
+    if((mDeve=linha.match(reNomeDeve))){
+      const val=parseMoneyLoose(mDeve[2]);
+      if(!isNaN(val)){ result.devias.push({nome:mDeve[1].trim(), val, det:''}); continue; }
+    }
+
+    // 2) Bloco "Entregador: NOME" / "Telefone: ..." / opcionalmente "R$ valor"
+    //    em linhas separadas. Junta nome+telefone numa única anotação.
+    if(reEntregador.test(linha) && !reEntregadorComValor.test(linha)){
+      const linhaTelefone = linhas[idx+1];
+      if(linhaTelefone && reTelefoneLinha.test(linhaTelefone)){
+        let consumed = 1; // quantas linhas extras (além desta) foram usadas
+        let val = null;
+        const linhaValor = linhas[idx+2];
+        if(linhaValor){
+          const mv = linhaValor.match(reSoValorRS) || linhaValor.match(/^([\d.,]+)\s*$/);
+          if(mv){ val = parseMoneyLoose(mv[1]); consumed = 2; }
+        }
+        result.devias.push({
+          nome: linha + '\n' + linhaTelefone,
+          val: (val!=null && !isNaN(val)) ? val : 0,
+          det: '',
+          warn: (val==null || isNaN(val)) // sem valor reconhecido: marca para revisão
+        });
+        idx += consumed; // pula as linhas já consumidas
+        continue;
+      }
+    }
+
+    // 3) "Entregador: NOME<tab ou espaços>VALOR" na mesma linha, seguida de
+    //    "Telefone: ..." na linha de baixo.
+    let mEV;
+    if((mEV=linha.match(reEntregadorComValor))){
+      const linhaTelefone = linhas[idx+1];
+      const val = parseMoneyLoose(mEV[2]);
+      if(linhaTelefone && reTelefoneLinha.test(linhaTelefone)){
+        result.devias.push({ nome: mEV[1].trim() + '\n' + linhaTelefone, val: isNaN(val)?0:val, det:'', warn: isNaN(val) });
+        idx += 1;
+        continue;
+      } else if(!isNaN(val)){
+        // sem linha de telefone depois — ainda assim é uma dívida válida
+        result.devias.push({ nome: mEV[1].trim(), val, det:'' });
+        continue;
+      }
     }
 
     // dentro de uma seção: vendas / despesas / devemos
@@ -1375,6 +1614,26 @@ function parseRelatorioTexto(raw){
     result.ignoradas.push({texto:linha, motivo:'Formato não reconhecido'});
   }
 
+  // ===== MESCLAR DUPLICADOS DENTRO DO PRÓPRIO TEXTO COLADO =====
+  // Mesmo nome (idêntico após normalizar) aparecendo em mais de uma linha:
+  // soma os turnos e o consumo num único registro, em vez de duplicar a pessoa.
+  // Isso é automático porque o nome é o mesmo — não há ambiguidade aqui.
+  const funcMesclados = [];
+  result.funcionarios.forEach(f=>{
+    const existente = funcMesclados.find(e=>normalizaNome(e.nome)===normalizaNome(f.nome));
+    if(existente){
+      existente.turnos = [...existente.turnos, ...f.turnos];
+      const consumosUnicos = [...new Set([existente.consumo, f.consumo].filter(Boolean))];
+      existente.consumo = consumosUnicos.join(', ');
+      existente.warn = existente.warn || f.warn;
+      existente.rawLine = existente.rawLine + ' | ' + f.rawLine;
+      existente._mesclado = true;
+    } else {
+      funcMesclados.push({...f});
+    }
+  });
+  result.funcionarios = funcMesclados;
+
   return result;
 }
 
@@ -1382,9 +1641,34 @@ function processarImport(){
   const raw = document.getElementById('import-raw').value;
   if(!raw.trim()){ alert('Cole algum texto primeiro.'); return; }
   importParsed = parseRelatorioTexto(raw);
+  detectarDuplicadosComEstadoAtual(importParsed);
   renderImportPreview(importParsed);
   document.getElementById('import-step-paste').style.display='none';
   document.getElementById('import-step-preview').style.display='block';
+}
+
+// Compara os funcionários recém-importados com os que já existem no relatório
+// de hoje (state.funcionarios). Nome idêntico (normalizado) -> mescla
+// automaticamente (marca mergeAuto, sem perguntar). Nome parecido mas não
+// idêntico -> marca como sugestão (mergeSugestao), exibida no preview com a
+// opção de confirmar antes de aplicar.
+function detectarDuplicadosComEstadoAtual(p){
+  const existentes = (state && state.funcionarios) || [];
+  p.funcionarios.forEach(f=>{
+    f.mergeAuto = null;     // índice no state.funcionarios para mesclar automaticamente
+    f.mergeSugestao = null; // {idx, nomeExistente} sugestão a confirmar
+    f.mergeConfirmado = false; // marcado true quando o usuário confirma a sugestão
+    let melhorSim = 0, melhorIdx = -1;
+    existentes.forEach((ex,idx)=>{
+      const sim = similaridadeNomes(ex.nome, f.nome);
+      if(sim>melhorSim){ melhorSim=sim; melhorIdx=idx; }
+    });
+    if(melhorIdx>=0 && melhorSim===1){
+      f.mergeAuto = melhorIdx;
+    } else if(melhorIdx>=0 && melhorSim>=LIMIAR_SIMILARIDADE_NOME){
+      f.mergeSugestao = { idx:melhorIdx, nomeExistente: existentes[melhorIdx].nome, sim:melhorSim };
+    }
+  });
 }
 
 function renderImportPreview(p){
@@ -1394,6 +1678,8 @@ function renderImportPreview(p){
   summaryParts.push(`${totalFunc} funcionário(s)${warnFunc?`, ${warnFunc} para revisar ⚠️`:''}`);
   summaryParts.push(`${p.vendas.length} venda(s), ${p.despesas.length} despesa(s), ${p.devias.length} anotação(ões)`);
   if(p.depositos.length) summaryParts.push(`${p.depositos.length} depósito(s)`);
+  const totalPizzasImp = p.pizzas ? (p.pizzas.p||0)+(p.pizzas.m||0)+(p.pizzas.g||0)+(p.pizzas.gg||0) : 0;
+  if(totalPizzasImp>0) summaryParts.push(`${totalPizzasImp} pizza(s) iFood (serão somadas ao contador)`);
   if(p.cxIni) summaryParts.push('Caixa inicial detectado');
   if(p.cxFin) summaryParts.push('Caixa final detectado');
   if(p.ignoradas.length) summaryParts.push(`${p.ignoradas.length} linha(s) não importada(s)`);
@@ -1403,16 +1689,50 @@ function renderImportPreview(p){
   if(p.cxIni) html+=lineRow(p.cxIni.pendente?'Caixa Inicial: (vazio — pendência)':`Caixa Inicial: R$ ${fmt(p.cxIni.val)}`, p.cxIni.pendente?'warn':'ok','Caixa');
   if(p.cxFin) html+=lineRow(p.cxFin.pendente?'Caixa Final: (vazio — pendência)':`Caixa Final: R$ ${fmt(p.cxFin.val)}`, p.cxFin.pendente?'warn':'ok','Caixa');
   p.depositos.forEach(d=>html+=lineRow(d.pendente?'Depósito: (vazio — pendência)':`Depósito: R$ ${fmt(d.val)}${d.quem?' - '+escapeHTML(d.quem):''}`, d.pendente?'warn':'ok','Depósito'));
-  p.funcionarios.forEach(f=>{
+  p.funcionarios.forEach((f,fi)=>{
     const turnosTxt=f.turnos.map(t=>`${t.ent||'?'}-${t.sai||'?'}`).join(' | ');
     const det=[turnosTxt, f.consumo].filter(Boolean).join(' · ');
-    html+=lineRow(`${escapeHTML(f.nome)}${det?': '+escapeHTML(det):''}`, f.warn?'warn':'ok', f.warn?'Revisar':'Funcionário');
+    if(f.mergeAuto!=null){
+      html+=lineRow(`${escapeHTML(f.nome)}${det?': '+escapeHTML(det):''} <span style="color:var(--green);">— será somado ao já existente "${escapeHTML(state.funcionarios[f.mergeAuto].nome)}"</span>`,'ok','Mesclar');
+    } else if(f.mergeSugestao && !f.mergeConfirmado){
+      const pct = Math.round(f.mergeSugestao.sim*100);
+      html+=`<div class="imp-line warn" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
+          <div>${escapeHTML(f.nome)}${det?': '+escapeHTML(det):''}<br><span style="color:var(--orange);">Parece ser a mesma pessoa que "${escapeHTML(f.mergeSugestao.nomeExistente)}" já no relatório de hoje (${pct}% parecido)</span></div>
+          <span class="imp-tag">Confirmar?</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-green" style="padding:4px 10px;font-size:11px;" onclick="confirmarMergeSugestao(${fi},true)">✅ É a mesma pessoa</button>
+          <button class="btn btn-gray" style="padding:4px 10px;font-size:11px;" onclick="confirmarMergeSugestao(${fi},false)">São diferentes</button>
+        </div>
+      </div>`;
+    } else if(f.mergeSugestao && f.mergeConfirmado){
+      html+=lineRow(`${escapeHTML(f.nome)}${det?': '+escapeHTML(det):''} <span style="color:var(--green);">— confirmado: será somado a "${escapeHTML(f.mergeSugestao.nomeExistente)}"</span>`,'ok','Mesclar');
+    } else {
+      html+=lineRow(`${escapeHTML(f.nome)}${det?': '+escapeHTML(det):''}`, f.warn?'warn':'ok', f.warn?'Revisar':'Funcionário');
+    }
   });
   p.vendas.forEach(v=>html+=lineRow(`${escapeHTML(v.desc)} — R$ ${fmt(v.val)}`,'ok','Venda'));
   p.despesas.forEach(d=>html+=lineRow(`${escapeHTML(d.desc)} — R$ ${fmt(d.val)}`,'ok','Despesa'));
-  p.devias.forEach(d=>html+=lineRow(`${escapeHTML(d.nome)}${d.val?' — R$ '+fmt(d.val):''}`, d.warn?'warn':'ok', d.warn?'Revisar':'Devendo'));
+  p.devias.forEach(d=>html+=lineRow(`${escapeHTML(d.nome).replace(/\n/g,'<br>')}${d.val?' — R$ '+fmt(d.val):''}`, d.warn?'warn':'ok', d.warn?'Revisar':'Devendo'));
+  if(p.pizzas){
+    const PL={p:'Pequena',m:'Média',g:'Grande',gg:'Gigante'};
+    Object.keys(PL).forEach(k=>{ if(p.pizzas[k]>0) html+=lineRow(`${PL[k]}: +${p.pizzas[k]}`,'ok','Pizza iFood'); });
+  }
   p.ignoradas.forEach(i=>html+=lineRow(`${escapeHTML(i.texto)} <span style="color:var(--muted);">(${escapeHTML(i.motivo)})</span>`,'warn','Não importado'));
   document.getElementById('import-preview-list').innerHTML = html || '<div class="empty">Nada reconhecido neste texto.</div>';
+}
+
+function confirmarMergeSugestao(idx, ehMesmaPessoa){
+  if(!importParsed) return;
+  const f = importParsed.funcionarios[idx];
+  if(!f || !f.mergeSugestao) return;
+  if(ehMesmaPessoa){
+    f.mergeConfirmado = true;
+  } else {
+    f.mergeSugestao = null; // trata como pessoa nova, sem mesclar
+  }
+  renderImportPreview(importParsed);
 }
 
 function lineRow(html, cls, tag){
@@ -1429,11 +1749,21 @@ function confirmarImport(){
   if(p.cxFin && !p.cxFin.pendente) state.cxFin = p.cxFin.val;
   p.depositos.forEach(d=>{ if(!d.pendente) state.depositos.push({val:d.val, quem:d.quem}); });
   p.funcionarios.forEach(f=>{
-    state.funcionarios.push({
-      nome:f.nome, turnos:f.turnos, consumo:f.consumo,
-      obs: f.warn ? `⚠️ Revisar — texto original: "${f.rawLine}"` : '',
-      freelance:false, vlrHora:0, totalPago:0, horasStr:'', horasTotal:0
-    });
+    const idxAlvo = (f.mergeAuto!=null) ? f.mergeAuto : (f.mergeSugestao && f.mergeConfirmado ? f.mergeSugestao.idx : null);
+    if(idxAlvo!=null && state.funcionarios[idxAlvo]){
+      // Mescla com o funcionário já existente: soma turnos e consumo, não duplica.
+      const ex = state.funcionarios[idxAlvo];
+      ex.turnos = [...(ex.turnos||[]), ...f.turnos];
+      const consumosUnicos = [...new Set([ex.consumo, f.consumo].filter(Boolean))];
+      ex.consumo = consumosUnicos.join(', ');
+      if(f.warn) ex.obs = [ex.obs, `⚠️ Revisar — texto original: "${f.rawLine}"`].filter(Boolean).join(' · ');
+    } else {
+      state.funcionarios.push({
+        nome:f.nome, turnos:f.turnos, consumo:f.consumo,
+        obs: f.warn ? `⚠️ Revisar — texto original: "${f.rawLine}"` : '',
+        freelance:false, vlrHora:0, totalPago:0, horasStr:'', horasTotal:0
+      });
+    }
   });
   p.vendas.forEach(v=>state.vendas.push({val:v.val, desc:v.desc, plat:v.plat}));
   p.despesas.forEach(d=>state.despesas.push({val:d.val, desc:d.desc, plat:d.plat}));
@@ -1441,9 +1771,15 @@ function confirmarImport(){
     nome:d.nome, val:d.val||0,
     det: d.warn ? (d.det ? d.det+' · ⚠️ revisar (importado sem valor claro)' : '⚠️ revisar (importado sem valor claro)') : (d.det||'')
   }));
+  if(p.pizzas){
+    state.pizzas.p = (state.pizzas.p||0) + (p.pizzas.p||0);
+    state.pizzas.m = (state.pizzas.m||0) + (p.pizzas.m||0);
+    state.pizzas.g = (state.pizzas.g||0) + (p.pizzas.g||0);
+    state.pizzas.gg = (state.pizzas.gg||0) + (p.pizzas.gg||0);
+  }
 
-  document.getElementById('cx-ini').value = state.cxIni||'';
-  document.getElementById('cx-fin').value = state.cxFin||'';
+  setMoneyField('cx-ini', state.cxIni);
+  setMoneyField('cx-fin', state.cxFin);
   render();
   save();
   fecharModal('modal-import');
@@ -1568,8 +1904,8 @@ async function editarDia(dateKey){
   showPage('page-ver');
   const data=await window._load(dateKey);
   editState=data?cloneState(data):emptyState();
-  document.getElementById('ecx-ini').value=editState.cxIni||'';
-  document.getElementById('ecx-fin').value=editState.cxFin||'';
+  setMoneyField('ecx-ini', editState.cxIni);
+  setMoneyField('ecx-fin', editState.cxFin);
   eRender();
   switchVerTab('edit');
 }
@@ -1577,16 +1913,30 @@ async function editarDia(dateKey){
 // ===== MODAL =====
 function abrirModal(id){document.getElementById(id).style.display='flex';}
 function fecharModal(id){document.getElementById(id).style.display='none';}
-document.querySelectorAll('.modal-bg').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.style.display='none';});});
+// Fecha o modal ao clicar no fundo escuro — mas só quando o clique de fato
+// COMEÇA e TERMINA no fundo. Sem isso, selecionar um texto dentro do modal e
+// soltar o mouse fora dele (comum ao arrastar a seleção) dispara um "click"
+// no fundo e fecha o modal sem avisar, descartando o que estava sendo digitado.
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  let mousedownNoFundo = false;
+  m.addEventListener('mousedown', e=>{ mousedownNoFundo = (e.target===m); });
+  m.addEventListener('click', e=>{
+    if(e.target===m && mousedownNoFundo) m.style.display='none';
+    mousedownNoFundo = false;
+  });
+});
 
 // ===== GLOBALS =====
 window.abrirRelatorio = abrirRelatorio;
 const btnAbrir = document.getElementById('btn-abrir');
 if(btnAbrir) btnAbrir.addEventListener('click', function(ev){ ev.preventDefault(); window.abrirRelatorioSafe(); });
 window.irHome=irHome;window.irHistorico=irHistorico;
+window.cicleTheme=cicleTheme;
 window.switchTab=switchTab;window.switchVerTab=switchVerTab;
-window.addDep=addDep;window.remDep=remDep;window.autoSave=autoSave;
-window.eAddDep=eAddDep;window.eRemDep=eRemDep;window.editAutoSave=editAutoSave;
+window.abrirModalDep=abrirModalDep;window.editDep=editDep;window.remDep=remDep;window.salvarDep=salvarDep;
+window.eAbrirModalDep=eAbrirModalDep;window.eEditDep=eEditDep;window.eRemDep=eRemDep;
+window.autoSave=autoSave;
+window.editAutoSave=editAutoSave;
 window.abrirModalFunc=abrirModalFunc;window.eAbrirModalFunc=eAbrirModalFunc;
 window.editFunc=editFunc;window.eEditFunc=eEditFunc;
 window.remFunc=remFunc;window.eRemFunc=eRemFunc;
@@ -1611,6 +1961,7 @@ window.filtrarFunc=filtrarFunc;window.eFiltrarFunc=eFiltrarFunc;
 window.irParaFim=irParaFim;
 window.abrirModalImport=abrirModalImport;window.voltarImportPaste=voltarImportPaste;
 window.processarImport=processarImport;window.confirmarImport=confirmarImport;
+window.confirmarMergeSugestao=confirmarMergeSugestao;
 
 // INIT
 setStatusSafe('☁️ Pronto','#1D9E75');

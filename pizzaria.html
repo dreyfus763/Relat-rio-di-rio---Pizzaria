@@ -16,6 +16,7 @@
   --red:#E24B4A; --red-lt:#fff5f5;
   --orange:#f59e0b; --orange-lt:#fffbeb;
   --purple:#7c3aed; --purple-lt:#f5f3ff;
+  --calcred:#dc2626; --calcred-lt:#fef2f2;
   --r:10px;
 }
 body.theme-dark {
@@ -25,6 +26,7 @@ body.theme-dark {
   --red:#ff6b6a; --red-lt:#3a1f20;
   --orange:#ffb648; --orange-lt:#332a18;
   --purple:#a78bfa; --purple-lt:#2a2440;
+  --calcred:#ff6b6a; --calcred-lt:#3a1f20;
 }
 body.theme-neon {
   --bg:#0a0612; --surface:#150e24; --surface2:#1c1233;
@@ -33,6 +35,7 @@ body.theme-neon {
   --red:#ff3d7f; --red-lt:#33102090;
   --orange:#ffd23f; --orange-lt:#332b0f;
   --purple:#c850ff; --purple-lt:#26133f;
+  --calcred:#ff3d7f; --calcred-lt:#33102090;
 }
 /* Tema neon: leve brilho nas bordas e títulos para reforçar o clima cyberpunk */
 body.theme-neon .sec{box-shadow:0 0 0 1px rgba(57,255,158,0.08), 0 0 18px rgba(200,80,255,0.06);}
@@ -80,6 +83,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-red{background:var(--red-lt);color:var(--red);border:1px solid rgba(226,75,74,.25);}
 .btn-purple{background:var(--purple-lt);color:var(--purple);border:1px solid #ddd6fe;}
 .btn-orange{background:var(--orange-lt);color:#b45309;border:1px solid rgba(245,158,11,.35);}
+.btn-calc{background:var(--calcred-lt);color:var(--calcred);border:1px solid rgba(220,38,38,.35);}
 .btn-copy{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;}
 .btn-big{padding:14px 28px;font-size:16px;border-radius:12px;}
 .btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
@@ -89,8 +93,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .func-name{font-size:15px;font-weight:700;}
 .func-turno{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .func-turno-row{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
-.func-horario{font-size:13px;font-weight:700;color:#0c7a5a;background:#e3f7ee;border:1px solid #b9e8d3;border-radius:6px;padding:2px 8px;font-family:'SF Mono',Consolas,monospace;letter-spacing:.01em;}
-.func-horario em{font-style:normal;color:#1D9E75;}
+.func-horario{font-size:13px;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:'SF Mono',Consolas,monospace;letter-spacing:.01em;}
+.func-horario em{font-style:normal;color:var(--green);}
 .func-horario-sep{color:var(--muted);font-size:12px;margin:0 4px;}
 .func-horario-vazio{color:var(--muted);background:var(--surface);border-color:var(--border);font-weight:600;font-family:inherit;}
 .func-consumo{font-size:12px;color:var(--text);margin-top:4px;}
@@ -105,11 +109,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .func-group-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px;display:flex;align-items:center;gap:6px;}
 .func-group-label:first-child{margin-top:0;}
 .item-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;gap:8px;}
-.item-left{flex:1;min-width:0;}
+.item-left{flex:1;min-width:0;order:2;text-align:right;}
+.item-val{font-size:14px;font-weight:700;flex-shrink:0;order:1;text-align:left;}
 .item-desc{font-size:13px;font-weight:500;}
 .item-plat{font-size:11px;color:var(--muted);margin-top:1px;}
-.item-val{font-size:14px;font-weight:700;flex-shrink:0;}
-.item-actions{display:flex;gap:5px;flex-shrink:0;}
+.item-actions{display:flex;gap:5px;flex-shrink:0;order:3;margin-left:auto;}
 .dep-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:6px;}
 .devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:5px;gap:8px;}
 .pill{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
@@ -153,6 +157,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .imp-line.ok{background:var(--green-lt);border-color:rgba(29,158,117,.25);}
 .imp-tag{font-size:9px;font-weight:700;text-transform:uppercase;padding:1px 5px;border-radius:99px;background:var(--surface);color:var(--muted);flex-shrink:0;}
 .imp-summary{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+/* CALCULADORA DE HORAS (multi-dia) */
+.calc-day-card{border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--surface2);}
+.calc-day-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;}
+.calc-total-box{background:var(--calcred-lt);border:1px solid rgba(220,38,38,.3);border-radius:var(--r);padding:14px;margin-top:12px;}
+.calc-hist-card{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
 /* SCROLL FAB */
 .scroll-fab{position:fixed;right:16px;bottom:22px;width:46px;height:46px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);z-index:150;display:flex;align-items:center;justify-content:center;transition:transform .15s, opacity .15s;}
 .scroll-fab:active{transform:scale(0.92);}
@@ -219,6 +228,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="sec-hdr">
           <div class="sec-title">👥 Funcionários</div>
           <div style="display:flex;gap:6px;">
+            <button class="btn btn-calc" title="Calculadora de horas (multi-dia)" onclick="abrirCalculadora()">🧮</button>
             <button class="btn btn-green" onclick="abrirModalFunc(false)">+ Func</button>
             <button class="btn btn-purple" onclick="abrirModalFunc(true)">+ Free</button>
           </div>
@@ -434,10 +444,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="fg" id="mi-plat-wrap"><label>Plataforma</label>
         <select id="mi-plat">
           <option value="Balcão">Balcão</option>
-          <option value="iFood">iFood</option>
           <option value="WhatsApp">WhatsApp</option>
           <option value="Anota AI">Anota AI</option>
-          <option value="Outro">Outro</option>
+          <option value="Anota AI Divina">Anota AI Divina</option>
+          <option value="Anota AI Santo">Anota AI Santo</option>
         </select>
       </div>
     </div>
@@ -509,12 +519,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- MODAL CALCULADORA DE HORAS (multi-dia / freelance) -->
+<div class="modal-bg" id="modal-calc">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-title" style="color:var(--calcred);">🧮 Calculadora de horas — Freelance</div>
+    <input type="hidden" id="cc-idx" value="-1"/>
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="fg"><label>Nome do freelance</label><input type="text" id="cc-nome" placeholder="ex: Gustavo"/></div>
+      <div class="fg"><label>R$ / hora</label><input type="text" inputmode="numeric" class="money-input" id="cc-vlrh" placeholder="0,00" oninput="calcCalculadora()"/></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">DIAS / TURNOS TRABALHADOS</div>
+    <div id="cc-dias"></div>
+    <button class="btn btn-gray" style="margin-bottom:10px;" onclick="addDiaCalculadora()">+ Dia / Turno</button>
+    <div class="calc-total-box" id="cc-total"></div>
+    <div class="fg" style="margin:12px 0 10px;"><label>Observação (opcional)</label><input type="text" id="cc-obs" placeholder="ex: pagamento semanal dom-dom"/></div>
+    <div class="btn-row">
+      <button class="btn btn-calc" onclick="salvarCalculo()">💾 Salvar cálculo</button>
+      <button class="btn btn-gray" onclick="fecharModal('modal-calc')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO DE CÁLCULOS -->
+<div class="modal-bg" id="modal-calc-hist">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-title" style="color:var(--calcred);">🧮 Cálculos salvos</div>
+    <div id="cc-hist-list"><div class="empty">Nenhum cálculo salvo ainda.</div></div>
+    <div class="btn-row">
+      <button class="btn btn-calc" onclick="fecharModal('modal-calc-hist');abrirNovoCalculo();">+ Novo cálculo</button>
+      <button class="btn btn-gray" onclick="fecharModal('modal-calc-hist')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== ESTADO =====
 // ===== FIREBASE REST + CACHE LOCAL / UTILITÁRIOS =====
 const FIREBASE_DB_URL = 'https://base-de-dados-dashboard-12ac2-default-rtdb.firebaseio.com';
 const CACHE_KEY_FALLBACK = 'piz_cache';
 const DEVICE_ID_KEY = 'piz_device_id';
+const CALC_CACHE_KEY = 'piz_calc_cache';
 
 function setStatusSafe(msg, color) {
   const el = document.getElementById('sync-status');
@@ -669,6 +713,32 @@ window._getCached = function(dateKey) {
   const local = getLocal(dateKey);
   return local ? normalizeState(local) : null;
 };
+
+// ===== CÁLCULOS DE HORAS (freelance multi-dia) — persistência local + Firebase =====
+function readCalcCache(){
+  try { return JSON.parse(localStorage.getItem(CALC_CACHE_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function writeCalcCache(cache){
+  try { localStorage.setItem(CALC_CACHE_KEY, JSON.stringify(cache)); } catch(e){}
+}
+async function calcSaveAll(cache){
+  writeCalcCache(cache);
+  try { await firebaseSet('pizzaria_calc', cache); } catch(e){ console.warn('Sem sincronizar cálculos', e); }
+}
+async function calcLoadAll(){
+  const local = readCalcCache();
+  try {
+    const remote = await firebaseGet('pizzaria_calc');
+    if(remote && typeof remote === 'object'){
+      writeCalcCache(remote);
+      return remote;
+    }
+    return local;
+  } catch(e){
+    return local;
+  }
+}
 
 // Garante que o botão funciona mesmo em prévia/sandbox.
 window.abrirRelatorioSafe = async function() {
@@ -1143,8 +1213,8 @@ function salvarFunc(){
 function itemCard(it,i,tipo,ctx){
   const platInfo=tipo==='venda'?`<div class="item-plat">${escapeHTML(it.plat)}</div>`:'';
   return `<div class="item-card">
-    <div class="item-left"><div class="item-desc">${escapeHTML(it.desc)}</div>${platInfo}</div>
     <div class="item-val" style="color:${tipo==='venda'?'var(--green)':'var(--red)'};">R$ ${fmt(it.val)}</div>
+    <div class="item-left"><div class="item-desc">${escapeHTML(it.desc)}</div>${platInfo}</div>
     <div class="item-actions">
       <button onclick="${ctx==='edit'?'eEditItem':'editItem'}('${tipo}',${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
       <button onclick="${ctx==='edit'?'eRemItem':'remItem'}('${tipo}',${i})" class="btn btn-red" style="padding:3px 7px;font-size:11px;">✕</button>
@@ -1319,6 +1389,12 @@ function gerarTexto(st,dk){
         linha += partes.join(' | ');
       } else if(turnos.length){
         linha+=turnos.map(t=>`${t.ent} - ${t.sai}`).join(' | ');
+      } else if(!turnos.length && f.consumo){
+        // Sem horário nenhum mas com consumo: precisa aparecer o consumo mesmo
+        // assim — funcionário/pessoa não pode ter consumido algo e sumir do
+        // relatório sem cobrança/anotação (ex: André comeu uma pizza sem bater
+        // ponto). Sem horário para "encaixar" o consumo, ele entra direto.
+        linha+=f.consumo;
       }
       if(f.obs)linha+=` [${escapeHTML(f.obs)}]`;
       if(f.freelance&&f.totalPago)linha+=` >>>>>>>> R$ ${fmt(f.totalPago)} Pago!!!!${f.horasStr?` (${f.horasStr})`:''}`;
@@ -1370,6 +1446,43 @@ function extrairHorarios(s){
   return m || [];
 }
 
+// ===== TRADUÇÃO / NORMALIZAÇÃO PT-BR (espanhol, castelhano, portunhol) =====
+// A pizzaria tem funcionária que escreve em espanhol/castelhano/portunhol.
+// Antes de qualquer outra análise do texto colado, normalizamos palavras-chave
+// conhecidas (cabeçalhos de seção e termos comuns) para o português esperado
+// pelo parser, sem mexer em nomes próprios nem em valores.
+const DIC_TRADUCAO_PTBR = [
+  // despesas / gastos
+  [/\bdespensas?\b/gi, 'despesas'],
+  [/\bgastos?\b/gi, 'despesas'],
+  [/\bgasto general\b/gi, 'despesas'],
+  // vendas
+  [/\bventas?\b/gi, 'vendas'],
+  [/\bvenda del dia\b/gi, 'vendas'],
+  // devemos / dívidas
+  [/\bdebemos\b/gi, 'devemos'],
+  [/\bdeuda(s)?\b/gi, 'devemos'],
+  [/\bdebe(mos)?\b/gi, 'deve'],
+  // caixa
+  [/\bcaja inicial\b/gi, 'caixa inicial'],
+  [/\bcaja final\b/gi, 'caixa final'],
+  [/\bcaja\b/gi, 'caixa'],
+  // depósito
+  [/\bdep[oó]sitos?\b/gi, 'depósito'],
+  // entregador / telefone
+  [/\brepartidor\b/gi, 'entregador'],
+  [/\btel[eé]fono\b/gi, 'telefone'],
+  // consumo comum em portunhol
+  [/\bconsumo\b/gi, 'consumo'],
+  [/\bagua\b/gi, 'água'],
+  [/\bcoca\b/gi, 'coca'],
+];
+function traduzirParaPtBr(raw){
+  let t = raw;
+  DIC_TRADUCAO_PTBR.forEach(([re, rep])=>{ t = t.replace(re, rep); });
+  return t;
+}
+
 // ===== SIMILARIDADE DE NOMES (para detectar duplicados com grafia diferente) =====
 // Normaliza removendo acentos/pontuação e aplicando equivalências fonéticas
 // comuns em nomes próprios no PT-BR (y≈i, consoantes duplicadas≈simples),
@@ -1408,7 +1521,8 @@ function similaridadeNomes(a, b){
 }
 const LIMIAR_SIMILARIDADE_NOME = 0.80;
 
-function parseRelatorioTexto(raw){
+function parseRelatorioTexto(rawOriginal){
+  const raw = traduzirParaPtBr(rawOriginal);
   const linhas = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
   const result = {
     dataDetectada:null,
@@ -1427,7 +1541,7 @@ function parseRelatorioTexto(raw){
   const reDeposito = /^dep[oó]sito\s*:?\s*(.*)$/i;
   const reVendasHdr = /^vendas\s*:?\s*$/i;
   const reDespesasHdr = /^despesas\s*:?\s*$/i;
-  const reDevemosHdr = /^devemos\s*:?\s*$/i;
+  const reDevemosHdr = /^(devemos|deve|deve-se|deve-se a)\s*:?\s*$/i;
   const rePizza = /^pizzas?\s+(pequenas?|m[eé]dias?|grandes?|gigantes?)\s*:?/i;
   // Linha de entregador (com ou sem valor colado na mesma linha, separado por
   // tab ou múltiplos espaços — comum ao copiar de planilha/tabela).
@@ -1470,7 +1584,25 @@ function parseRelatorioTexto(raw){
     // reservada como nome de funcionário mais adiante.
     if(/^vendas\s*:/i.test(linha)){ secao='vendas'; result.ignoradas.push({texto:linha, motivo:'Cabeçalho de seção com texto extra (ignorado)'}); continue; }
     if(/^despesas\s*:/i.test(linha)){ secao='despesas'; result.ignoradas.push({texto:linha, motivo:'Cabeçalho de seção com texto extra (ignorado)'}); continue; }
-    if(/^devemos\s*:/i.test(linha)){ secao='devemos'; result.ignoradas.push({texto:linha, motivo:'Cabeçalho de seção com texto extra (ignorado)'}); continue; }
+    if(/^(devemos|deve)\s*:/i.test(linha)){
+      // "devemos: 28,00 yoel" tudo numa linha só — processa o resto já como
+      // primeira entrada da seção "devemos", além de abrir a seção para as
+      // linhas seguintes.
+      secao='devemos';
+      const resto = linha.replace(/^(devemos|deve)\s*:\s*/i,'').trim();
+      if(resto){
+        const m3 = resto.match(/^([\d.,]+)\s+(.+)$/) || resto.match(/^(.+?)\s+([\d.,]+)\s*$/);
+        if(m3){
+          // decide qual grupo é valor e qual é nome, testando ambas as ordens
+          let val = parseMoneyLoose(m3[1]);
+          let nome = m3[2];
+          if(isNaN(val)){ val = parseMoneyLoose(m3[2]); nome = m3[1]; }
+          if(!isNaN(val)){ result.devias.push({nome:nome.trim(), val, det:''}); continue; }
+        }
+        result.devias.push({nome:resto, val:0, det:'', warn:true});
+      }
+      continue;
+    }
 
     // caixa inicial / final (podem vir vazios)
     if((mm=linha.match(reCxIni))){
@@ -1562,18 +1694,19 @@ function parseRelatorioTexto(raw){
       continue;
     }
     if(secao==='devemos'){
-      // formato esperado: "jeremia 16,00"
-      const m3 = linha.match(/^(.+?)\s+([\d.,]+)\s*$/);
-      if(m3){
-        const val=parseMoneyLoose(m3[2]);
-        if(!isNaN(val)){ result.devias.push({nome:m3[1].trim(), val, det:''}); continue; }
-      }
-      // Sem valor numérico reconhecível no final: pode ser uma anotação sem valor
-      // (ex: "Moto João - levou maquininha") ou pode ser algo que não tem nada a
-      // ver com dívida (assinatura, observação solta etc). Como não dá para saber
-      // com certeza, importa como anotação mas marca para revisão, em vez de
-      // assumir silenciosamente. Linhas muito longas (provavelmente não são nomes
-      // de pessoa) vão direto para ignoradas.
+      // formato esperado: "jeremia 16,00" OU "16,00 jeremia" (nome e valor
+      // podem vir em qualquer ordem — tentamos as duas antes de desistir).
+      let val = NaN, nome = '';
+      const m3a = linha.match(/^(.+?)\s+([\d.,]+)\s*$/); // nome ... valor
+      const m3b = linha.match(/^([\d.,]+)\s+(.+)$/);     // valor ... nome
+      if(m3a && !isNaN(parseMoneyLoose(m3a[2]))){ val=parseMoneyLoose(m3a[2]); nome=m3a[1].trim(); }
+      else if(m3b && !isNaN(parseMoneyLoose(m3b[1]))){ val=parseMoneyLoose(m3b[1]); nome=m3b[2].trim(); }
+      if(!isNaN(val)){ result.devias.push({nome, val, det:''}); continue; }
+      // Sem valor numérico reconhecível: pode ser uma anotação sem valor
+      // (ex: "Moto João - levou maquininha") ou algo sem relação com dívida.
+      // Como não dá para saber com certeza, importa como anotação mas marca
+      // para revisão, em vez de assumir silenciosamente. Linhas muito longas
+      // (provavelmente não são nomes de pessoa) vão direto para ignoradas.
       if(linha.length<=40){
         result.devias.push({nome:linha, val:0, det:'', warn:true});
       } else {
@@ -1600,11 +1733,17 @@ function parseRelatorioTexto(raw){
       let consumoTxt = resto;
       horarios.forEach(h=>{ consumoTxt = consumoTxt.replace(h,''); });
       consumoTxt = consumoTxt.replace(/\|/g,' ').replace(/^[\s\-–,]+|[\s\-–,]+$/g,'').replace(/\s*-\s*-\s*/g,' ').replace(/\s{2,}/g,' ').trim();
+      // Sem horário nenhum: só é motivo de revisão se também não houver
+      // consumo registrado (linha realmente vazia/ambígua). Se a pessoa
+      // consumiu algo (ex: "André: pizza volta"), isso já é informação
+      // suficiente e completa — não precisa de revisão manual, só precisa
+      // aparecer no relatório final (ver gerarTexto).
       const semHorario = horarios.length===0;
+      const semHorarioESemConsumo = semHorario && !consumoTxt;
       result.funcionarios.push({
         nome, turnos, consumo: consumoTxt, obs:'',
-        warn: semHorario,
-        warnMsg: semHorario ? 'Sem horário identificado — confira manualmente' : null,
+        warn: semHorarioESemConsumo,
+        warnMsg: semHorarioESemConsumo ? 'Sem horário identificado — confira manualmente' : null,
         rawLine: linha
       });
       continue;
@@ -1910,6 +2049,133 @@ async function editarDia(dateKey){
   switchVerTab('edit');
 }
 
+// ===== CALCULADORA DE HORAS (freelance, multi-dia) =====
+let calcDias = []; // [{data:'YYYY-MM-DD', ent:'HH:MM', sai:'HH:MM'}]
+let calcEditIdx = -1; // índice do cálculo salvo sendo editado (-1 = novo)
+
+function abrirCalculadora(){
+  abrirModalCalcHist();
+}
+
+async function abrirModalCalcHist(){
+  const cache = await calcLoadAll();
+  const lista = Object.keys(cache).map(id=>({id, ...cache[id]})).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const el = document.getElementById('cc-hist-list');
+  if(!lista.length){
+    el.innerHTML='<div class="empty">Nenhum cálculo salvo ainda.</div>';
+  } else {
+    el.innerHTML = lista.map(c=>{
+      const totalHoras = (c.dias||[]).reduce((s,d)=>s+(calcHorasUmDia(d)||0),0);
+      const totalPag = totalHoras*(parseFloat(c.vlrHora)||0);
+      return `<div class="calc-hist-card">
+        <div>
+          <div style="font-weight:700;">${escapeHTML(c.nome||'(sem nome)')}</div>
+          <div style="font-size:12px;color:var(--muted);">${(c.dias||[]).length} dia(s) · ${totalHoras.toFixed(2).replace(/\.00$/,'')}h · R$ ${fmt(totalPag)}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-calc" style="padding:5px 10px;font-size:12px;" onclick="abrirEditarCalculo('${c.id}')">✏️ Abrir</button>
+          <button class="btn btn-red" style="padding:5px 10px;font-size:12px;" onclick="excluirCalculo('${c.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  abrirModal('modal-calc-hist');
+}
+
+function abrirNovoCalculo(){
+  calcEditIdx = -1;
+  document.getElementById('cc-idx').value = '';
+  document.getElementById('cc-nome').value = '';
+  setMoneyField('cc-vlrh','');
+  document.getElementById('cc-obs').value='';
+  calcDias = [{data:'', ent:'', sai:''}];
+  renderCalcDias();
+  calcCalculadora();
+  abrirModal('modal-calc');
+}
+
+async function abrirEditarCalculo(id){
+  const cache = await calcLoadAll();
+  const c = cache[id];
+  if(!c){ alert('Cálculo não encontrado.'); return; }
+  fecharModal('modal-calc-hist');
+  document.getElementById('cc-idx').value = id;
+  document.getElementById('cc-nome').value = c.nome||'';
+  setMoneyField('cc-vlrh', c.vlrHora||'');
+  document.getElementById('cc-obs').value = c.obs||'';
+  calcDias = (c.dias&&c.dias.length) ? c.dias.map(d=>({...d})) : [{data:'',ent:'',sai:''}];
+  renderCalcDias();
+  calcCalculadora();
+  abrirModal('modal-calc');
+}
+
+async function excluirCalculo(id){
+  if(!confirm('Excluir este cálculo salvo?')) return;
+  const cache = await calcLoadAll();
+  delete cache[id];
+  await calcSaveAll(cache);
+  abrirModalCalcHist();
+}
+
+function renderCalcDias(){
+  const el = document.getElementById('cc-dias');
+  el.innerHTML = calcDias.map((d,i)=>`
+    <div class="calc-day-card" id="cc-day-${i}">
+      <div class="calc-day-hdr">
+        <input type="date" value="${d.data||''}" onchange="ccSetDia(${i},'data',this.value)" style="border:1px solid var(--border);border-radius:7px;padding:6px 8px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;flex:1;"/>
+        <button class="btn btn-red" style="padding:4px 8px;font-size:11px;" onclick="removerDiaCalculadora(${i})">✕</button>
+      </div>
+      <div class="row2">
+        <div class="fg"><label>Entrada</label><input type="time" value="${d.ent||''}" onchange="ccSetDia(${i},'ent',this.value)"/></div>
+        <div class="fg"><label>Saída</label><input type="time" value="${d.sai||''}" onchange="ccSetDia(${i},'sai',this.value)"/></div>
+      </div>
+      <div style="font-size:12px;color:var(--calcred);font-weight:600;margin-top:6px;" id="cc-day-horas-${i}"></div>
+    </div>`).join('');
+  calcDias.forEach((d,i)=>atualizarHorasDia(i));
+}
+function ccSetDia(i,campo,valor){ calcDias[i][campo]=valor; atualizarHorasDia(i); calcCalculadora(); }
+function addDiaCalculadora(){ calcDias.push({data:'',ent:'',sai:''}); renderCalcDias(); calcCalculadora(); }
+function removerDiaCalculadora(i){ calcDias.splice(i,1); if(!calcDias.length) calcDias.push({data:'',ent:'',sai:''}); renderCalcDias(); calcCalculadora(); }
+
+function calcHorasUmDia(d){
+  if(!d || !d.ent || !d.sai) return 0;
+  const[h1,m1]=d.ent.split(':').map(Number);const[h2,m2]=d.sai.split(':').map(Number);
+  let mins=(h2*60+m2)-(h1*60+m1); if(mins<0) mins+=1440;
+  return mins/60;
+}
+function atualizarHorasDia(i){
+  const el = document.getElementById(`cc-day-horas-${i}`);
+  if(!el) return;
+  const h = calcHorasUmDia(calcDias[i]);
+  el.textContent = h>0 ? `${h.toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')}h trabalhadas` : '';
+}
+function calcCalculadora(){
+  const vlr = parseMoney(document.getElementById('cc-vlrh').value)||0;
+  const totalHoras = calcDias.reduce((s,d)=>s+calcHorasUmDia(d),0);
+  const totalPag = totalHoras*vlr;
+  const el = document.getElementById('cc-total');
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;color:var(--calcred);">
+      <span>Total de horas</span><span>${totalHoras.toFixed(2).replace(/\.00$/,'')}h</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:15px;color:var(--calcred);margin-top:6px;">
+      <span>Total a pagar</span><span>R$ ${fmt(totalPag)}</span>
+    </div>`;
+}
+
+async function salvarCalculo(){
+  const nome = document.getElementById('cc-nome').value.trim();
+  if(!nome){ alert('Digite o nome do freelance.'); return; }
+  const vlrHora = parseMoney(document.getElementById('cc-vlrh').value)||0;
+  const obs = document.getElementById('cc-obs').value.trim();
+  const diasValidos = calcDias.filter(d=>d.data||d.ent||d.sai);
+  const idAtual = document.getElementById('cc-idx').value || ('calc_'+Date.now()+'_'+Math.random().toString(16).slice(2));
+  const cache = await calcLoadAll();
+  cache[idAtual] = { nome, vlrHora, obs, dias: diasValidos, updatedAt: Date.now() };
+  await calcSaveAll(cache);
+  document.getElementById('cc-idx').value = idAtual;
+  alert('✅ Cálculo salvo!');
+}
+
 // ===== MODAL =====
 function abrirModal(id){document.getElementById(id).style.display='flex';}
 function fecharModal(id){document.getElementById(id).style.display='none';}
@@ -1962,6 +2228,11 @@ window.irParaFim=irParaFim;
 window.abrirModalImport=abrirModalImport;window.voltarImportPaste=voltarImportPaste;
 window.processarImport=processarImport;window.confirmarImport=confirmarImport;
 window.confirmarMergeSugestao=confirmarMergeSugestao;
+window.abrirCalculadora=abrirCalculadora;window.abrirModalCalcHist=abrirModalCalcHist;
+window.abrirNovoCalculo=abrirNovoCalculo;window.abrirEditarCalculo=abrirEditarCalculo;
+window.excluirCalculo=excluirCalculo;window.ccSetDia=ccSetDia;
+window.addDiaCalculadora=addDiaCalculadora;window.removerDiaCalculadora=removerDiaCalculadora;
+window.calcCalculadora=calcCalculadora;window.salvarCalculo=salvarCalculo;
 
 // INIT
 setStatusSafe('☁️ Pronto','#1D9E75');

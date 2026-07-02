@@ -90,6 +90,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* CARDS */
 .func-card{border-radius:8px;border:1px solid var(--border);padding:11px 12px;margin-bottom:8px;background:var(--surface2);}
 .func-card.free{border-color:var(--purple);background:var(--purple-lt);}
+.func-card.calc{border-color:var(--calcred);background:var(--calcred-lt);}
 .func-name{font-size:15px;font-weight:700;}
 .func-turno{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .func-turno-row{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
@@ -109,11 +110,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .func-group-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px;display:flex;align-items:center;gap:6px;}
 .func-group-label:first-child{margin-top:0;}
 .item-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;gap:8px;}
-.item-left{flex:1;min-width:0;order:2;text-align:right;}
-.item-val{font-size:14px;font-weight:700;flex-shrink:0;order:1;text-align:left;}
+.item-left{flex:1;min-width:0;}
+.item-val{font-size:14px;font-weight:700;}
 .item-desc{font-size:13px;font-weight:500;}
 .item-plat{font-size:11px;color:var(--muted);margin-top:1px;}
-.item-actions{display:flex;gap:5px;flex-shrink:0;order:3;margin-left:auto;}
+.item-actions{display:flex;gap:5px;flex-shrink:0;margin-left:8px;}
 .dep-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:6px;}
 .devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:5px;gap:8px;}
 .pill{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
@@ -1069,6 +1070,9 @@ function salvarDep(){
 // Determina se o funcionário ainda está trabalhando (último turno sem saída
 // preenchida) ou já saiu (todos os turnos têm entrada e saída).
 function funcStatus(f){
+  // Entrada criada pela calculadora de horas (multi-dia): não é presença nem
+  // consumo, é um registro de pagamento já fechado — tem grupo próprio.
+  if(f.fromCalc) return 'calculo';
   const turnos = (f.turnos||[]).filter(t=>t.ent||t.sai);
   // Sem nenhum horário: não é alguém "no trabalho" nem "que saiu" — é só um
   // registro de consumo (ex: pizza/coca de alguém que passou lá), então não
@@ -1080,9 +1084,53 @@ function funcStatus(f){
   return 'indefinido';
 }
 
+function fmtHorasNum(h){
+  const n = parseFloat(h)||0;
+  if(!n) return '0h';
+  const hh = Math.floor(n);
+  const mm = Math.round((n-hh)*60);
+  return mm>0 ? `${hh}h${mm}m` : `${hh}h`;
+}
+
 function funcCard(f, i, ctx) {
-  const turnos = (f.turnos||[]).filter(t=>t.ent||t.sai);
   const status = funcStatus(f);
+
+  // Entrada vinda da Calculadora de horas: não mostra turno por turno no
+  // card (viraria uma lista enorme) — mostra só um resumo compacto, com
+  // botão para expandir e ver todos os dias/horários se precisar.
+  if(f.fromCalc){
+    const dias = f.calcDias||[];
+    const detId = `calc-days-${ctx}-${i}`;
+    const diasHtml = dias.length
+      ? dias.map(d=>`<div style="font-size:12px;color:var(--text);padding:4px 0;border-bottom:1px dashed var(--border);display:flex;justify-content:space-between;gap:8px;">
+          <span>${d.data?fmtDate(d.data):'(sem data)'}</span>
+          <span style="font-family:'SF Mono',Consolas,monospace;">${d.ent||'?'} – ${d.sai||'?'}</span>
+          <span style="color:var(--calcred);font-weight:600;">${fmtHorasNum(calcHorasUmDia(d))}</span>
+        </div>`).join('')
+      : '<div class="empty" style="padding:6px;">Nenhum dia registrado.</div>';
+    const pag = f.totalPago ? `<div class="func-pag" style="color:var(--calcred);">>>>>>>>> R$ ${fmt(f.totalPago)} Pago!!!!${f.horasStr?` (${f.horasStr})`:''}</div>` : '';
+    const obs = f.obs?`<div class="func-obs">📝 ${escapeHTML(f.obs)}</div>`:'';
+    return `<div class="func-card calc" data-func-nome="${escapeHTML(f.nome.toLowerCase())}" data-func-status="calculo">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="min-width:0;">
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <span class="func-name">${escapeHTML(f.nome)}</span>
+            <span class="pill pill-free">Freelance</span>
+            <span class="pill" style="background:var(--calcred-lt);color:var(--calcred);">🧮 Cálculo de horas</span>
+          </div>
+          ${pag}${obs}
+          <button class="btn btn-gray" style="padding:3px 9px;font-size:11px;margin-top:6px;" onclick="toggleCalcDias('${ctx}',${i})">📅 Ver dias trabalhados (${dias.length})</button>
+          <div id="${detId}" style="display:none;margin-top:6px;">${diasHtml}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;">
+          <button onclick="${ctx==='edit'?'eEditFunc':'editFunc'}(${i})" class="btn btn-gray" style="padding:4px 8px;font-size:11px;">✏️</button>
+          <button onclick="${ctx==='edit'?'eRemFunc':'remFunc'}(${i})" class="btn btn-red" style="padding:4px 8px;font-size:11px;">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const turnos = (f.turnos||[]).filter(t=>t.ent||t.sai);
   const turnosHtml = turnos.length
     ? turnos.map(t=>`<span class="func-horario">${t.ent||'?'} – ${t.sai||'<em>agora</em>'}</span>`).join('<span class="func-horario-sep">|</span>')
     : '<span class="func-horario func-horario-vazio">sem horário</span>';
@@ -1108,6 +1156,11 @@ function funcCard(f, i, ctx) {
     </div>
   </div>`;
 }
+function toggleCalcDias(ctx,i){
+  const el = document.getElementById(`calc-days-${ctx}-${i}`);
+  if(!el) return;
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
 
 // Renderiza a lista de funcionários (busca + agrupamento por status) para
 // qualquer um dos dois contextos. Usado tanto pela tela "Anotar" de hoje
@@ -1126,6 +1179,7 @@ function _renderFuncList(listId, searchId, arr, ctx){
   const indefinidos = comIdx.filter(({f})=>funcStatus(f)==='indefinido');
   const saidos = comIdx.filter(({f})=>funcStatus(f)==='saiu');
   const consumo = comIdx.filter(({f})=>funcStatus(f)==='consumo');
+  const calculos = comIdx.filter(({f})=>funcStatus(f)==='calculo');
 
   let html='';
   if(presentes.length || indefinidos.length){
@@ -1135,6 +1189,10 @@ function _renderFuncList(listId, searchId, arr, ctx){
   if(saidos.length){
     html+=`<div class="func-group-label">⚪ Já saíram (${saidos.length})</div>`;
     html+=saidos.map(({f,i})=>funcCard(f,i,ctx)).join('');
+  }
+  if(calculos.length){
+    html+=`<div class="func-group-label">🧮 Cálculo de horas (${calculos.length})</div>`;
+    html+=calculos.map(({f,i})=>funcCard(f,i,ctx)).join('');
   }
   if(consumo.length){
     html+=`<div class="func-group-label">🍕 Só consumo (${consumo.length})</div>`;
@@ -1146,12 +1204,20 @@ function renderFunc(){ state = normalizeState(state); _renderFuncList('func-list
 function filtrarFunc(){ renderFunc(); }
 
 function remFunc(i){const f=state.funcionarios[i];if(!confirm(`Excluir "${f?f.nome:'este funcionário'}"?`))return;state.funcionarios.splice(i,1);renderFunc();save();}
-function editFunc(i){_openModalFunc(i,'main',state.funcionarios[i]);}
+function editFunc(i){
+  const f=state.funcionarios[i];
+  if(f && f.fromCalc){ abrirEditarCalculo(f.calcId); return; }
+  _openModalFunc(i,'main',f);
+}
 
 function eRenderFunc(){ editState = normalizeState(editState); _renderFuncList('efunc-list','efunc-search', editState.funcionarios, 'edit'); }
 function eFiltrarFunc(){ eRenderFunc(); }
 function eRemFunc(i){const f=editState.funcionarios[i];if(!confirm(`Excluir "${f?f.nome:'este funcionário'}"?`))return;editState.funcionarios.splice(i,1);eRenderFunc();editSave();}
-function eEditFunc(i){_openModalFunc(i,'edit',editState.funcionarios[i]);}
+function eEditFunc(i){
+  const f=editState.funcionarios[i];
+  if(f && f.fromCalc){ abrirEditarCalculo(f.calcId); return; }
+  _openModalFunc(i,'edit',f);
+}
 
 
 function abrirModalFunc(free){_openModalFunc(-1,'main',null,free);}
@@ -1212,9 +1278,14 @@ function salvarFunc(){
 // ===== VENDAS / DESPESAS =====
 function itemCard(it,i,tipo,ctx){
   const platInfo=tipo==='venda'?`<div class="item-plat">${escapeHTML(it.plat)}</div>`:'';
+  const cor = tipo==='venda'?'var(--green)':'var(--red)';
+  // Valor à esquerda, descrição logo ao lado (mesma linha, separados por um
+  // "-"), botões sempre no canto direito.
   return `<div class="item-card">
-    <div class="item-val" style="color:${tipo==='venda'?'var(--green)':'var(--red)'};">R$ ${fmt(it.val)}</div>
-    <div class="item-left"><div class="item-desc">${escapeHTML(it.desc)}</div>${platInfo}</div>
+    <div class="item-left">
+      <div class="item-desc"><span class="item-val" style="color:${cor};">R$ ${fmt(it.val)}</span> <span style="color:var(--muted);">-</span> ${escapeHTML(it.desc)}</div>
+      ${platInfo}
+    </div>
     <div class="item-actions">
       <button onclick="${ctx==='edit'?'eEditItem':'editItem'}('${tipo}',${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
       <button onclick="${ctx==='edit'?'eRemItem':'remItem'}('${tipo}',${i})" class="btn btn-red" style="padding:3px 7px;font-size:11px;">✕</button>
@@ -1377,7 +1448,9 @@ function gerarTexto(st,dk){
     st.funcionarios.forEach(f=>{
       const turnos=(f.turnos||[]).filter(t=>t.ent||t.sai);
       let linha=f.nome+': ';
-      if(turnos.length===1&&f.consumo){
+      if(f.fromCalc){
+        linha+=`🧮 cálculo de horas (${(f.calcDias||[]).length} dia(s))`;
+      } else if(turnos.length===1&&f.consumo){
         linha+=`${turnos[0].ent} - ${f.consumo} - ${turnos[0].sai}`;
       } else if(turnos.length>1&&f.consumo){
         // Com múltiplos turnos, o consumo entra dentro do último turno, entre
@@ -1521,6 +1594,35 @@ function similaridadeNomes(a, b){
 }
 const LIMIAR_SIMILARIDADE_NOME = 0.80;
 
+// ===== CABEÇALHOS DE SEÇÃO COM ERRO ORTOGRÁFICO =====
+// A funcionária que digita esses relatórios comete bastante erro de escrita
+// ("depisas", "depesas", "despensas" em vez de "despesas"). Em vez de tentar
+// listar cada erro possível manualmente, comparamos a linha (já sem números,
+// pontuação e acentos) contra as palavras-chave conhecidas usando a mesma
+// medida de similaridade usada para nomes de funcionário — assim qualquer
+// erro de digitação plausível (trocar, faltar ou repetir 1-2 letras) ainda
+// é reconhecido como o cabeçalho pretendido, sem exigir grafia exata.
+const LIMIAR_SIMILARIDADE_HEADER = 0.72;
+const HEADERS_FUZZY = [
+  { sec:'vendas',   palavras:['vendas','venda'] },
+  { sec:'despesas', palavras:['despesas','despesa'] },
+  { sec:'devemos',  palavras:['devemos','anotacoes','anotações','dividas','devendo'] },
+];
+function detectarHeaderFuzzy(linha){
+  const bruta = linha.trim();
+  if(!bruta || bruta.length>20) return null; // cabeçalhos são linhas curtas
+  const limpa = bruta.replace(/[:•\-–]+$/,'').trim();
+  if(!limpa) return null;
+  let melhorSec=null, melhorSim=0, melhorPalavra=null;
+  HEADERS_FUZZY.forEach(({sec,palavras})=>{
+    palavras.forEach(p=>{
+      const sim = similaridadeNomes(limpa, p);
+      if(sim>melhorSim){ melhorSim=sim; melhorSec=sec; melhorPalavra=p; }
+    });
+  });
+  return melhorSim>=LIMIAR_SIMILARIDADE_HEADER ? {sec:melhorSec, palavra:melhorPalavra, sim:melhorSim} : null;
+}
+
 function parseRelatorioTexto(rawOriginal){
   const raw = traduzirParaPtBr(rawOriginal);
   const linhas = raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
@@ -1534,6 +1636,14 @@ function parseRelatorioTexto(rawOriginal){
     ignoradas:[] // {texto, motivo}
   };
   let secao = null; // null | 'vendas' | 'despesas' | 'devemos'
+  let secaoDevidaLabel = ''; // rótulo do cabeçalho que abriu a seção de dívidas (ex: "Devemos"), usado para categorizar o campo Detalhe de cada anotação abaixo dele
+  function labelDevida(keyword){
+    const k = (keyword||'').toLowerCase();
+    if(k.startsWith('devemos')) return 'Devemos';
+    if(k.startsWith('deve')) return 'Deve';
+    if(k.startsWith('anota')) return 'Anotações';
+    return 'Devendo';
+  }
 
   const reData = /^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?$/;
   const reCxIni = /^caixa\s*inicial\s*:?\s*(.*)$/i;
@@ -1541,8 +1651,19 @@ function parseRelatorioTexto(rawOriginal){
   const reDeposito = /^dep[oó]sito\s*:?\s*(.*)$/i;
   const reVendasHdr = /^vendas\s*:?\s*$/i;
   const reDespesasHdr = /^despesas\s*:?\s*$/i;
-  const reDevemosHdr = /^(devemos|deve|deve-se|deve-se a)\s*:?\s*$/i;
+  const reDevemosHdr = /^(devemos|deve|deve-se|deve-se a|anota[cç][oõ]es)\s*:?\s*$/i;
   const rePizza = /^pizzas?\s+(pequenas?|m[eé]dias?|grandes?|gigantes?)\s*:?/i;
+  // Linhas de totalização que o próprio app gera no relatório final (ex:
+  // "Total vendas: R$ 57,00", "Total despesas: R$ 22,00", "Total depósitos:
+  // R$ 100,00") — ao reimportar um relatório já finalizado, essas linhas são
+  // só um resumo redundante dos itens já listados acima; devem ser ignoradas
+  // silenciosamente, nunca tratadas como um item novo nem como erro.
+  const reTotalLinha = /^total\s+(vendas?|despesas?|dep[oó]sitos?)\s*:?\s*(r\$)?\s*[\d.,]*\s*$/i;
+  // Formato exportado pelo próprio relatório para uma anotação/dívida:
+  // "Nome - R$ valor - detalhe" (o detalhe é opcional). É o mesmo formato
+  // que a tela "Anotações/Devendo" mostra e que gerarTexto() produz — o
+  // importador precisa entender de volta o que ele mesmo gera.
+  const reDeviaExport = /^(.+?)\s*-\s*r\$\s*([\d.,]+)(?:\s*-\s*(.+))?$/i;
   // Linha de entregador (com ou sem valor colado na mesma linha, separado por
   // tab ou múltiplos espaços — comum ao copiar de planilha/tabela).
   const reEntregadorComValor = /^(entregador\s*:\s*.+?)[ \t]+([\d.,]+)\s*$/i;
@@ -1556,9 +1677,14 @@ function parseRelatorioTexto(rawOriginal){
   for(let idx=0; idx<linhas.length; idx++){
     const linha = linhas[idx];
 
-    // data tipo 25.06 ou 25/06/2026
+    // data tipo 25.06, 25/06/2026, ou *01/07/2026* (título em negrito do
+    // próprio relatório exportado por este app — precisa reconhecer de volta).
     let mm;
-    if((mm=linha.match(reData))){ result.dataDetectada = linha; continue; }
+    const linhaSemAsterisco = linha.replace(/^\*+|\*+$/g, '');
+    if((mm=linhaSemAsterisco.match(reData))){ result.dataDetectada = linhaSemAsterisco; continue; }
+
+    // linhas de total (redundantes com os itens já listados) — ignora sem erro
+    if(reTotalLinha.test(linha)){ continue; }
 
     // pizzas no texto colado: soma ao contador atual (mesmos botões +/-)
     let mPizza;
@@ -1578,7 +1704,7 @@ function parseRelatorioTexto(rawOriginal){
     // cabeçalhos de seção
     if(reVendasHdr.test(linha)){ secao='vendas'; continue; }
     if(reDespesasHdr.test(linha)){ secao='despesas'; continue; }
-    if(reDevemosHdr.test(linha)){ secao='devemos'; continue; }
+    if(reDevemosHdr.test(linha)){ secao='devemos'; const mHdr=linha.match(reDevemosHdr); secaoDevidaLabel=labelDevida(mHdr?mHdr[1]:'devemos'); continue; }
     // cabeçalho com texto sobrando na mesma linha (ex: "VENDAS: 3 itens") — entra
     // na seção mesmo assim e descarta o resto, em vez de interpretar a palavra
     // reservada como nome de funcionário mais adiante.
@@ -1589,6 +1715,8 @@ function parseRelatorioTexto(rawOriginal){
       // primeira entrada da seção "devemos", além de abrir a seção para as
       // linhas seguintes.
       secao='devemos';
+      const mHdrInline = linha.match(/^(devemos|deve)\s*:/i);
+      secaoDevidaLabel = labelDevida(mHdrInline?mHdrInline[1]:'devemos');
       const resto = linha.replace(/^(devemos|deve)\s*:\s*/i,'').trim();
       if(resto){
         const m3 = resto.match(/^([\d.,]+)\s+(.+)$/) || resto.match(/^(.+?)\s+([\d.,]+)\s*$/);
@@ -1597,10 +1725,19 @@ function parseRelatorioTexto(rawOriginal){
           let val = parseMoneyLoose(m3[1]);
           let nome = m3[2];
           if(isNaN(val)){ val = parseMoneyLoose(m3[2]); nome = m3[1]; }
-          if(!isNaN(val)){ result.devias.push({nome:nome.trim(), val, det:''}); continue; }
+          if(!isNaN(val)){ result.devias.push({nome:nome.trim(), val, det:secaoDevidaLabel}); continue; }
         }
-        result.devias.push({nome:resto, val:0, det:'', warn:true});
+        result.devias.push({nome:resto, val:0, det:secaoDevidaLabel, warn:true});
       }
+      continue;
+    }
+
+    // cabeçalho com erro de digitação (ex: "depisas", "depesas" em vez de
+    // "despesas") — só entra aqui se nenhum dos padrões exatos acima bateu.
+    const headerFuzzy = detectarHeaderFuzzy(linha);
+    if(headerFuzzy){
+      secao = headerFuzzy.sec;
+      if(headerFuzzy.sec==='devemos') secaoDevidaLabel = labelDevida(headerFuzzy.palavra);
       continue;
     }
 
@@ -1636,6 +1773,15 @@ function parseRelatorioTexto(rawOriginal){
     if((mDeve=linha.match(reNomeDeve))){
       const val=parseMoneyLoose(mDeve[2]);
       if(!isNaN(val)){ result.devias.push({nome:mDeve[1].trim(), val, det:''}); continue; }
+    }
+
+    // 1b) "Nome - R$ valor - detalhe" (formato que o próprio app exporta em
+    // "ANOTAÇÕES:" — precisa entender de volta ao reimportar um relatório já
+    // finalizado). O detalhe é opcional.
+    let mDeviaExp;
+    if((mDeviaExp=linha.match(reDeviaExport))){
+      const val=parseMoneyLoose(mDeviaExp[2]);
+      if(!isNaN(val)){ result.devias.push({nome:mDeviaExp[1].trim(), val, det:(mDeviaExp[3]||'').trim()}); continue; }
     }
 
     // 2) Bloco "Entregador: NOME" / "Telefone: ..." / opcionalmente "R$ valor"
@@ -1680,15 +1826,20 @@ function parseRelatorioTexto(rawOriginal){
 
     // dentro de uma seção: vendas / despesas / devemos
     if(secao==='vendas' || secao==='despesas'){
-      // formato esperado: "564,00 - Troco" ou "20,00 Pizza Volta"
-      const m2 = linha.match(/^([\d.,]+)\s*[-–]?\s*(.*)$/);
-      if(m2){
-        const val=parseMoneyLoose(m2[1]);
-        const desc=m2[2].trim()||(secao==='vendas'?'Venda':'Despesa');
-        if(!isNaN(val)){
-          (secao==='vendas'?result.vendas:result.despesas).push({val, desc, plat:'Balcão'});
-          continue;
-        }
+      // formatos aceitos, em qualquer ordem — a funcionária às vezes escreve
+      // "564,00 - Troco", às vezes "taxa 9" (descrição antes do valor):
+      let val = NaN, desc = '';
+      const mValDesc = linha.match(/^([\d.,]+)\s*[-–]?\s*(.*)$/);   // "564,00 - Troco"
+      const mDescVal = linha.match(/^(.+?)\s+([\d.,]+)\s*$/);       // "taxa 9"
+      if(mValDesc && !isNaN(parseMoneyLoose(mValDesc[1]))){
+        val = parseMoneyLoose(mValDesc[1]); desc = mValDesc[2].trim();
+      } else if(mDescVal && !isNaN(parseMoneyLoose(mDescVal[2]))){
+        val = parseMoneyLoose(mDescVal[2]); desc = mDescVal[1].trim();
+      }
+      if(!isNaN(val)){
+        desc = desc || (secao==='vendas'?'Venda':'Despesa');
+        (secao==='vendas'?result.vendas:result.despesas).push({val, desc, plat:'Balcão'});
+        continue;
       }
       result.ignoradas.push({texto:linha, motivo:`Não entendi este valor de ${secao}`});
       continue;
@@ -1701,14 +1852,17 @@ function parseRelatorioTexto(rawOriginal){
       const m3b = linha.match(/^([\d.,]+)\s+(.+)$/);     // valor ... nome
       if(m3a && !isNaN(parseMoneyLoose(m3a[2]))){ val=parseMoneyLoose(m3a[2]); nome=m3a[1].trim(); }
       else if(m3b && !isNaN(parseMoneyLoose(m3b[1]))){ val=parseMoneyLoose(m3b[1]); nome=m3b[2].trim(); }
-      if(!isNaN(val)){ result.devias.push({nome, val, det:''}); continue; }
+      // O campo Detalhe recebe o rótulo da categoria que abriu esta seção
+      // (ex: "Devemos") — assim, ao olhar a anotação depois, fica claro a
+      // que ela se refere, sem precisar lembrar de onde veio no texto colado.
+      if(!isNaN(val)){ result.devias.push({nome, val, det:secaoDevidaLabel}); continue; }
       // Sem valor numérico reconhecível: pode ser uma anotação sem valor
       // (ex: "Moto João - levou maquininha") ou algo sem relação com dívida.
       // Como não dá para saber com certeza, importa como anotação mas marca
       // para revisão, em vez de assumir silenciosamente. Linhas muito longas
       // (provavelmente não são nomes de pessoa) vão direto para ignoradas.
       if(linha.length<=40){
-        result.devias.push({nome:linha, val:0, det:'', warn:true});
+        result.devias.push({nome:linha, val:0, det:secaoDevidaLabel, warn:true});
       } else {
         result.ignoradas.push({texto:linha, motivo:'Não parece uma dívida (nome + valor) — revise manualmente'});
       }
@@ -2173,7 +2327,32 @@ async function salvarCalculo(){
   cache[idAtual] = { nome, vlrHora, obs, dias: diasValidos, updatedAt: Date.now() };
   await calcSaveAll(cache);
   document.getElementById('cc-idx').value = idAtual;
-  alert('✅ Cálculo salvo!');
+  upsertFuncFromCalc(idAtual, nome, vlrHora, obs, diasValidos);
+  alert('✅ Cálculo salvo! Ele já aparece na lista de Funcionários do relatório de hoje.');
+}
+
+// Reflete o cálculo salvo como uma entrada (freelance) na lista de
+// Funcionários do relatório de HOJE, sem listar dia a dia ali (isso fica
+// escondido atrás do botão "Ver dias trabalhados" no próprio card) — mas
+// já mostrando o total pago, igual qualquer outro freelance.
+function upsertFuncFromCalc(calcId, nome, vlrHora, obs, dias){
+  if(!currentDate) currentDate = todayStr();
+  state = normalizeState(state);
+  const totalHoras = dias.reduce((s,d)=>s+calcHorasUmDia(d),0);
+  const totalPago = totalHoras*vlrHora;
+  const horasStr = totalHoras>0 ? fmtHorasNum(totalHoras) : '';
+  const reg = {
+    nome, turnos:[], consumo:'', obs,
+    freelance:true, fromCalc:true, calcId,
+    vlrHora, totalPago,
+    horasStr, horasTotal: totalHoras,
+    calcDias: dias.map(d=>({...d}))
+  };
+  const existingIdx = state.funcionarios.findIndex(f=>f.fromCalc && f.calcId===calcId);
+  if(existingIdx>=0) state.funcionarios[existingIdx]=reg;
+  else state.funcionarios.push(reg);
+  render();
+  save();
 }
 
 // ===== MODAL =====
@@ -2233,6 +2412,7 @@ window.abrirNovoCalculo=abrirNovoCalculo;window.abrirEditarCalculo=abrirEditarCa
 window.excluirCalculo=excluirCalculo;window.ccSetDia=ccSetDia;
 window.addDiaCalculadora=addDiaCalculadora;window.removerDiaCalculadora=removerDiaCalculadora;
 window.calcCalculadora=calcCalculadora;window.salvarCalculo=salvarCalculo;
+window.toggleCalcDias=toggleCalcDias;window.upsertFuncFromCalc=upsertFuncFromCalc;
 
 // INIT
 setStatusSafe('☁️ Pronto','#1D9E75');

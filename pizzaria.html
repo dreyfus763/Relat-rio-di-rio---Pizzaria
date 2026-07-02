@@ -2087,7 +2087,9 @@ function confirmarImport(){
 function copiarSecao(tipo){
   let txt='',arr=tipo==='vendas'?state.vendas:state.despesas;
   if(!arr.length){alert('Nenhum item para copiar.');return;}
-  txt=(tipo==='vendas'?'VENDAS:\n':'DESPESAS:\n');
+  // Sem título de seção aqui — o botão "Copiar" é para colar só a lista dos
+  // itens em si (o título "VENDAS:"/"DESPESAS:" só existe no relatório
+  // completo, gerado por "Copiar relatório completo").
   arr.forEach(it=>{txt+=`${fmt(it.val)} - ${escapeHTML(it.desc)}${tipo==='vendas'?' ('+it.plat+')':''}\n`;});
   copiar(txt.trim());
 }

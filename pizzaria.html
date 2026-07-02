@@ -1519,6 +1519,55 @@ function extrairHorarios(s){
   return m || [];
 }
 
+// "xx:xx" (e variações como "x:x", "XX:XX") — marcador que a funcionária usa
+// para "horário que eu não sei/não anotei direito", não um horário real.
+const RE_HORARIO_PLACEHOLDER = /^x{1,2}:x{1,2}$/i;
+// Marcador usado internamente para um horário que existe na linha mas é
+// ilegível — diferente de string vazia, que no resto do app já significa
+// "turno em aberto, ainda trabalhando" (ver funcCard). Sem essa distinção,
+// um "xx:xx" no meio do texto vira um "agora" falso.
+const MARCA_HORARIO_ILEGIVEL = '??';
+
+// Extrai os turnos de um "resto" (texto após "Nome:"), tratando cada trecho
+// separado por "|" como UM turno próprio, com até 2 "posições" de horário
+// (entrada e saída) separadas por "-". Isso é essencial quando a linha tem
+// marcadores "xx:xx" no meio: extrair todos os horários válidos da string
+// inteira e depois só emparelhar sequencialmente (par a par) desloca a
+// correspondência entrada/saída sempre que um "xx:xx" aparece no meio — ex:
+// "xx:xx - 10:20 | 12:35 - xx:xx | 15:40 -" tem 3 turnos reais (entrada
+// desconhecida→10:20, 12:35→saída desconhecida, 15:40→ainda), mas ao ignorar
+// os "xx:xx" e só parear os 3 números válidos que sobram (10:20, 12:35,
+// 15:40) o resultado vira 2 turnos errados (10:20→12:35, 15:40→agora).
+// Processando turno por turno (separado por "|"), a posição de cada horário
+// dentro do seu próprio turno nunca se perde.
+function extrairTurnosComPlaceholder(resto){
+  const segmentos = resto.split('|');
+  const turnos = [];
+  const consumoPartes = [];
+  let horarioIlegivel = false;
+  const reToken = /\b([01]?\d|2[0-3]):([0-5]\d)\b|\bx{1,2}:x{1,2}\b/gi;
+
+  segmentos.forEach(seg=>{
+    const tokens = seg.match(reToken) || [];
+    const slotVal = t => {
+      if(RE_HORARIO_PLACEHOLDER.test(t)){ horarioIlegivel = true; return MARCA_HORARIO_ILEGIVEL; }
+      return t;
+    };
+    if(tokens.length===1){
+      turnos.push({ent: slotVal(tokens[0]), sai:''});
+    } else if(tokens.length>=2){
+      turnos.push({ent: slotVal(tokens[0]), sai: slotVal(tokens[1])});
+    }
+    // o que sobrar no segmento fora dos horários (ex: "lata") vira consumo
+    let sobra = seg;
+    tokens.forEach(t=>{ sobra = sobra.replace(t,''); });
+    sobra = sobra.replace(/[-–]/g,' ').replace(/\s{2,}/g,' ').trim();
+    if(sobra) consumoPartes.push(sobra);
+  });
+
+  return { turnos, consumo: consumoPartes.join(' ').replace(/\s{2,}/g,' ').trim(), horarioIlegivel };
+}
+
 // ===== TRADUÇÃO / NORMALIZAÇÃO PT-BR (espanhol, castelhano, portunhol) =====
 // A pizzaria tem funcionária que escreve em espanhol/castelhano/portunhol.
 // Antes de qualquer outra análise do texto colado, normalizamos palavras-chave
@@ -1874,30 +1923,23 @@ function parseRelatorioTexto(rawOriginal){
     if(mNome){
       const nome = mNome[1].trim();
       let resto = mNome[2].trim();
-      const horarios = extrairHorarios(resto);
-      let turnos=[];
-      if(horarios.length>=2){
-        // monta pares de turno na ordem em que aparecem (entrada,saída, entrada,saída...)
-        for(let i=0;i+1<horarios.length;i+=2) turnos.push({ent:horarios[i],sai:horarios[i+1]});
-        if(horarios.length%2===1) turnos.push({ent:horarios[horarios.length-1],sai:''});
-      } else if(horarios.length===1){
-        turnos.push({ent:horarios[0],sai:''});
-      }
-      // remove os horários e separadores do texto restante p/ extrair "consumo"
-      let consumoTxt = resto;
-      horarios.forEach(h=>{ consumoTxt = consumoTxt.replace(h,''); });
-      consumoTxt = consumoTxt.replace(/\|/g,' ').replace(/^[\s\-–,]+|[\s\-–,]+$/g,'').replace(/\s*-\s*-\s*/g,' ').replace(/\s{2,}/g,' ').trim();
+      const { turnos, consumo: consumoTxt, horarioIlegivel } = extrairTurnosComPlaceholder(resto);
       // Sem horário nenhum: só é motivo de revisão se também não houver
       // consumo registrado (linha realmente vazia/ambígua). Se a pessoa
       // consumiu algo (ex: "André: pizza volta"), isso já é informação
       // suficiente e completa — não precisa de revisão manual, só precisa
-      // aparecer no relatório final (ver gerarTexto).
-      const semHorario = horarios.length===0;
+      // aparecer no relatório final (ver gerarTexto). Um "xx:xx" no meio do
+      // texto também pede revisão, mesmo com horário e/ou consumo presentes,
+      // porque uma das pontas do turno ficou marcada como ilegível.
+      const semHorario = turnos.length===0;
       const semHorarioESemConsumo = semHorario && !consumoTxt;
+      const precisaRevisao = semHorarioESemConsumo || horarioIlegivel;
       result.funcionarios.push({
         nome, turnos, consumo: consumoTxt, obs:'',
-        warn: semHorarioESemConsumo,
-        warnMsg: semHorarioESemConsumo ? 'Sem horário identificado — confira manualmente' : null,
+        warn: precisaRevisao,
+        warnMsg: precisaRevisao
+          ? (horarioIlegivel ? 'Horário ilegível ("xx:xx") em algum turno — confira manualmente' : 'Sem horário identificado — confira manualmente')
+          : null,
         rawLine: linha
       });
       continue;

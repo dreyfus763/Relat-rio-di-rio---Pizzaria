@@ -61,6 +61,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ctr{max-width:680px;margin:0 auto;padding:14px 12px 60px;}
 /* TABS */
 .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:100;}
+.tabs-search-wrap{flex:1.3;display:flex;align-items:center;padding:7px 10px;min-width:0;}
+.tabs-search-input{width:100%;border:1px solid var(--border);border-radius:99px;padding:6px 12px;font-size:12px;color:var(--text);background:var(--surface2);outline:none;font-family:inherit;}
+.tabs-search-input:focus{border-color:var(--green);background:var(--surface);}
+.tabs-search-input::placeholder{color:var(--muted);}
 .tab-btn{flex:1;padding:10px 4px;font-size:13px;font-weight:600;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;font-family:inherit;}
 .tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
 /* SECTION */
@@ -88,10 +92,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-big{padding:14px 28px;font-size:16px;border-radius:12px;}
 .btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
 /* CARDS */
-.func-card{border-radius:8px;border:1px solid var(--border);padding:11px 12px;margin-bottom:8px;background:var(--surface2);}
+.func-card{border-radius:8px;border:1px solid var(--border);padding:11px 12px;margin-bottom:8px;background:var(--surface2);position:relative;}
 .func-card.free{border-color:var(--purple);background:var(--purple-lt);}
 .func-card.calc{border-color:var(--calcred);background:var(--calcred-lt);}
 .func-name{font-size:15px;font-weight:700;}
+/* Easter egg: enquanto o Fabinho estiver com turno em aberto (ver funcCard),
+   o card dele inteiro vira uma mini tempestade — borda pulsando e raios
+   piscando espalhados pelo card, não só perto do nome. Puramente CSS, em
+   loop infinito, sem precisar de JS/timers rodando o tempo todo. */
+.storm-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;}
+.storm-bolt-path{fill:none;stroke:#7ef9ff;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:0;animation:boltFlash 2.2s ease-in infinite;animation-delay:var(--d,0s);}
+.storm-bolt-branch{fill:none;stroke:#c9fdff;stroke-width:0.9;stroke-linecap:round;stroke-linejoin:round;opacity:0;animation:boltFlash 2.2s ease-in infinite;animation-delay:var(--d,0s);}
+@keyframes boltFlash{
+  0%,92%,100%{opacity:0;}
+  4%{opacity:1;}
+  8%{opacity:0;}
+  46%{opacity:0;}
+  50%{opacity:1;}
+  54%{opacity:0;}
+}
 .func-turno{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .func-turno-row{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
 .func-horario{font-size:13px;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:'SF Mono',Consolas,monospace;letter-spacing:.01em;}
@@ -199,6 +218,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('anotar')">✏️ Anotar</button>
     <button class="tab-btn" onclick="switchTab('finalizar')">✅ Finalizar</button>
+    <div class="tabs-search-wrap">
+      <input type="text" id="func-search" class="tabs-search-input" placeholder="🔍 Buscar funcionário..." oninput="filtrarFunc()" onkeydown="if(event.key==='Enter'){event.preventDefault();irParaResultadoBusca();}"/>
+    </div>
   </div>
   <button class="scroll-fab" id="scroll-fab" onclick="irParaFim()" title="Ir para o fim" style="display:none;">⬇️</button>
   <div class="ctr">
@@ -235,7 +257,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
         </div>
         <div class="sec-body">
-          <input type="text" id="func-search" class="func-search" placeholder="🔍 Buscar funcionário..." oninput="filtrarFunc()"/>
           <div id="func-list"><div class="empty">Nenhum funcionário ainda.</div></div>
         </div>
       </div>
@@ -1093,6 +1114,36 @@ function fmtHorasNum(h){
   return mm>0 ? `${hh}h${mm}m` : `${hh}h`;
 }
 
+// ===== GERADOR DE RAIO PROCEDURAL (easter egg do Fabinho) =====
+// Em vez de um zigue-zague fixo, cada raio é montado com pontos aleatórios
+// a cada renderização — incluindo, às vezes, um pequeno galho saindo do meio
+// do raio principal, como um raio de verdade se ramificando.
+function _raioClamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function gerarRaioPontos(xBase, segmentos, jitter){
+  const pontos = [{x:xBase, y:0}];
+  let x = xBase;
+  const passo = 100/segmentos;
+  for(let s=1; s<=segmentos; s++){
+    x = _raioClamp(x + (Math.random()*jitter*2 - jitter), 3, 97);
+    pontos.push({x, y:passo*s});
+  }
+  return pontos;
+}
+function pontosParaPath(pontos){
+  return pontos.map((p,idx)=> (idx===0?'M':'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+}
+function gerarRamoRaio(pontos){
+  if(pontos.length<3) return '';
+  const idx = 1 + Math.floor(Math.random()*(pontos.length-2));
+  const origem = pontos[idx];
+  const comprimento = 6 + Math.random()*10;
+  const angulo = (Math.random()<0.5?-1:1) * (30 + Math.random()*35);
+  const rad = angulo * Math.PI/180;
+  const meio = { x:_raioClamp(origem.x + Math.sin(rad)*comprimento*0.6, 0,100), y: origem.y + Math.cos(rad)*comprimento*0.6 };
+  const fim  = { x:_raioClamp(origem.x + Math.sin(rad)*comprimento, 0,100),     y: origem.y + Math.cos(rad)*comprimento };
+  return `M${origem.x.toFixed(1)},${origem.y.toFixed(1)} L${meio.x.toFixed(1)},${meio.y.toFixed(1)} L${fim.x.toFixed(1)},${fim.y.toFixed(1)}`;
+}
+
 function funcCard(f, i, ctx) {
   const status = funcStatus(f);
 
@@ -1139,7 +1190,47 @@ function funcCard(f, i, ctx) {
   const pag=f.freelance&&f.totalPago?`<div class="func-pag">>>>>>>>> R$ ${fmt(f.totalPago)} Pago!!!!${f.horasStr?` (${f.horasStr})`:''}</div>`:'';
   const obs=f.obs?`<div class="func-obs">📝 ${escapeHTML(f.obs)}</div>`:'';
   const statusDot = status==='presente' ? '<span class="func-status-dot presente" title="Ainda no trabalho"></span>' : (status==='saiu' ? '<span class="func-status-dot saiu" title="Já saiu"></span>' : '');
+  // Easter egg: o Fabinho, enquanto estiver com turno em aberto, transforma
+  // o card inteiro dele numa mini tempestade — raios piscando espalhados
+  // pelo card e a borda pulsando, não só um detalhe perto do nome. Só ele,
+  // só de propósito, e só enquanto o horário estiver aberto (sai vazio no
+  // último turno).
+  const ehFabinhoAtivo = status==='presente' && f.nome.trim().toLowerCase()==='fabinho';
+  const boltFilterId = `boltGlow-${ctx}-${i}`;
+  let stormBolts = '';
+  if(ehFabinhoAtivo){
+    const basesX = [12 + Math.random()*12, 40 + Math.random()*20, 76 + Math.random()*12];
+    let pathsHtml = '';
+    basesX.forEach((bx, idx)=>{
+      const segmentos = 5 + Math.floor(Math.random()*3);
+      const jitter = 8 + Math.random()*9;
+      const pontos = gerarRaioPontos(bx, segmentos, jitter);
+      const delay = (idx*0.5 + Math.random()*0.3).toFixed(2);
+      pathsHtml += `<path class="storm-bolt-path" style="--d:${delay}s" filter="url(#${boltFilterId})" d="${pontosParaPath(pontos)}"/>`;
+      if(Math.random()<0.75){
+        const dBranch = gerarRamoRaio(pontos);
+        if(dBranch) pathsHtml += `<path class="storm-bolt-branch" style="--d:${delay}s" filter="url(#${boltFilterId})" d="${dBranch}"/>`;
+      }
+    });
+    stormBolts = `
+      <svg class="storm-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="${boltFilterId}" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="2.4" result="blurGrande"/>
+            <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="blurFino"/>
+            <feMerge>
+              <feMergeNode in="blurGrande"/>
+              <feMergeNode in="blurFino"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        ${pathsHtml}
+      </svg>
+    `;
+  }
   return `<div class="func-card ${f.freelance?'free':''}" data-func-nome="${escapeHTML(f.nome.toLowerCase())}" data-func-status="${status}">
+    ${stormBolts}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
       <div style="min-width:0;">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
@@ -1203,6 +1294,18 @@ function _renderFuncList(listId, searchId, arr, ctx){
 }
 function renderFunc(){ state = normalizeState(state); _renderFuncList('func-list','func-search', state.funcionarios, 'main'); }
 function filtrarFunc(){ renderFunc(); }
+
+// Ao apertar Enter na busca, sobe/desce a página sozinha até o funcionário
+// encontrado — a pessoa pode estar em qualquer parte do relatório (Vendas,
+// Despesas, Anotações...) e não precisa rolar manualmente pra achar o card.
+function irParaResultadoBusca(){
+  if(!document.getElementById('tab-anotar')) return;
+  switchTab('anotar'); // a lista de funcionários só existe na aba Anotar
+  const lista = document.getElementById('func-list');
+  if(!lista) return;
+  const alvo = lista.querySelector('.func-card') || lista;
+  alvo.scrollIntoView({behavior:'smooth', block:'center'});
+}
 
 function remFunc(i){const f=state.funcionarios[i];if(!confirm(`Excluir "${f?f.nome:'este funcionário'}"?`))return;state.funcionarios.splice(i,1);renderFunc();save();}
 function editFunc(i){
@@ -2463,6 +2566,7 @@ window.showPage=showPage;
 window.ajustarPizza=ajustarPizza;window.definirPizza=definirPizza;
 window.eAjustarPizza=eAjustarPizza;window.eDefinirPizza=eDefinirPizza;
 window.filtrarFunc=filtrarFunc;window.eFiltrarFunc=eFiltrarFunc;
+window.irParaResultadoBusca=irParaResultadoBusca;
 window.irParaFim=irParaFim;
 window.abrirModalImport=abrirModalImport;window.voltarImportPaste=voltarImportPaste;
 window.processarImport=processarImport;window.confirmarImport=confirmarImport;

@@ -449,6 +449,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <option value="Anota AI">Anota AI</option>
           <option value="Anota AI Divina">Anota AI Divina</option>
           <option value="Anota AI Santo">Anota AI Santo</option>
+          <option value="Entrega por fora">Entrega por fora</option>
         </select>
       </div>
     </div>
@@ -1836,17 +1837,32 @@ function parseRelatorioTexto(rawOriginal){
     // 2) Bloco "Entregador: NOME" / "Telefone: ..." / opcionalmente "R$ valor"
     //    em linhas separadas. Junta nome+telefone numa única anotação.
     if(reEntregador.test(linha) && !reEntregadorComValor.test(linha)){
-      const linhaTelefone = linhas[idx+1];
-      if(linhaTelefone && reTelefoneLinha.test(linhaTelefone)){
+      const linhaTelefoneRaw = linhas[idx+1];
+      if(linhaTelefoneRaw && reTelefoneLinha.test(linhaTelefoneRaw)){
         let consumed = 1; // quantas linhas extras (além desta) foram usadas
         let val = null;
-        const linhaValor = linhas[idx+2];
-        if(linhaValor){
-          const mv = linhaValor.match(reSoValorRS) || linhaValor.match(/^([\d.,]+)\s*$/);
-          if(mv){ val = parseMoneyLoose(mv[1]); consumed = 2; }
+        let linhaTelefoneFinal = linhaTelefoneRaw;
+
+        // O valor da dívida às vezes vem colado na MESMA linha do telefone,
+        // separado por tab/espaços (comum ao colar de uma tabela/planilha):
+        // "Telefone: (049) 99997-1707    156,00". Nesse caso o valor não é
+        // parte do telefone (telefone não tem vírgula decimal) — extrai e
+        // guarda só o telefone limpo no texto da anotação.
+        const mValorNaLinhaTelefone = linhaTelefoneRaw.match(/^(.*?)[ \t]+(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})\s*$/);
+        if(mValorNaLinhaTelefone){
+          linhaTelefoneFinal = mValorNaLinhaTelefone[1].trim();
+          val = parseMoneyLoose(mValorNaLinhaTelefone[2]);
+        } else {
+          // ou então numa linha própria, logo abaixo do telefone
+          const linhaValor = linhas[idx+2];
+          if(linhaValor){
+            const mv = linhaValor.match(reSoValorRS) || linhaValor.match(/^([\d.,]+)\s*$/);
+            if(mv){ val = parseMoneyLoose(mv[1]); consumed = 2; }
+          }
         }
+
         result.devias.push({
-          nome: linha + '\n' + linhaTelefone,
+          nome: linha + '\n' + linhaTelefoneFinal,
           val: (val!=null && !isNaN(val)) ? val : 0,
           det: '',
           warn: (val==null || isNaN(val)) // sem valor reconhecido: marca para revisão

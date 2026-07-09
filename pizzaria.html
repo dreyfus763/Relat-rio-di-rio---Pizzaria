@@ -220,7 +220,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="tab-btn active" onclick="switchTab('anotar')">✏️ Anotar</button>
     <button class="tab-btn" onclick="switchTab('finalizar')">✅ Finalizar</button>
     <div class="tabs-search-wrap">
-      <input type="text" id="func-search" class="tabs-search-input" placeholder="🔍 Buscar funcionário..." oninput="filtrarFunc()" onkeydown="if(event.key==='Enter'){event.preventDefault();irParaResultadoBusca();}"/>
+      <input type="text" id="func-search" class="tabs-search-input" placeholder="🔍 Buscar em tudo..." oninput="filtrarFunc()" onkeydown="if(event.key==='Enter'){event.preventDefault();irParaResultadoBusca();}"/>
     </div>
   </div>
   <button class="scroll-fab" id="scroll-fab" onclick="irParaFim()" title="Ir para o fim" style="display:none;">⬇️</button>
@@ -1321,18 +1321,27 @@ function _renderFuncList(listId, searchId, arr, ctx){
   el.innerHTML=html;
 }
 function renderFunc(){ state = normalizeState(state); _renderFuncList('func-list','func-search', state.funcionarios, 'main'); }
-function filtrarFunc(){ renderFunc(); }
+// Termo digitado na barra de busca da barra de abas — usado por TODAS as
+// seções do relatório de hoje (funcionários, vendas, despesas, anotações,
+// moto fixo), não só funcionários. Vazio = mostra tudo normalmente.
+function termoBuscaGlobal(){
+  return (document.getElementById('func-search')?.value || '').trim().toLowerCase();
+}
+function filtrarFunc(){ renderFunc(); renderVendas(); renderDesp(); renderDevia(); renderEntregadores(); }
 
-// Ao apertar Enter na busca, sobe/desce a página sozinha até o funcionário
-// encontrado — a pessoa pode estar em qualquer parte do relatório (Vendas,
-// Despesas, Anotações...) e não precisa rolar manualmente pra achar o card.
+// Ao apertar Enter na busca, sobe/desce a página sozinha até o primeiro
+// resultado encontrado — em qualquer seção (Funcionários, Moto Fixo, Vendas,
+// Despesas ou Anotações) — sem precisar rolar manualmente pra achar.
 function irParaResultadoBusca(){
   if(!document.getElementById('tab-anotar')) return;
-  switchTab('anotar'); // a lista de funcionários só existe na aba Anotar
-  const lista = document.getElementById('func-list');
-  if(!lista) return;
-  const alvo = lista.querySelector('.func-card') || lista;
-  alvo.scrollIntoView({behavior:'smooth', block:'center'});
+  switchTab('anotar');
+  const listasEmOrdem = ['func-list','entreg-list','vendas-list','desp-list','devia-list'];
+  for(const id of listasEmOrdem){
+    const lista = document.getElementById(id);
+    if(!lista) continue;
+    const alvo = lista.querySelector('.func-card, .item-card, .devia-card');
+    if(alvo){ alvo.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+  }
 }
 
 function remFunc(i){const f=state.funcionarios[i];if(!confirm(`Excluir "${f?f.nome:'este funcionário'}"?`))return;state.funcionarios.splice(i,1);renderFunc();save();}
@@ -1431,7 +1440,15 @@ function eRenderDesp(){_renderItems('edesp-list','edesp-total',editState.despesa
 function _renderItems(listId,totId,arr,tipo,ctx){
   const el=document.getElementById(listId);const tot=document.getElementById(totId);
   if(!arr||!arr.length){el.innerHTML=`<div class="empty">Nenhum${tipo==='venda'?'a venda':' despesa'} ainda.</div>`;if(tot)tot.style.display='none';return;}
-  el.innerHTML=arr.map((it,i)=>itemCard(it,i,tipo,ctx)).join('');
+  const termo = ctx==='main' ? termoBuscaGlobal() : '';
+  const comIdx = arr.map((it,i)=>({it,i})).filter(({it})=> !termo || (it.desc||'').toLowerCase().includes(termo));
+  if(!comIdx.length){
+    el.innerHTML = termo ? `<div class="empty">Nenhum resultado para "${escapeHTML(termo)}".</div>` : `<div class="empty">Nenhum${tipo==='venda'?'a venda':' despesa'} ainda.</div>`;
+    if(tot)tot.style.display='none';
+    return;
+  }
+  el.innerHTML=comIdx.map(({it,i})=>itemCard(it,i,tipo,ctx)).join('');
+  // Total sempre reflete o dia inteiro, não só o que está filtrado na busca.
   const total=arr.reduce((s,v)=>s+v.val,0);
   if(tot){tot.style.display='block';tot.innerHTML=`<div class="total-box"><span>Total ${tipo==='venda'?'vendas':'despesas'}</span><span style="color:${tipo==='venda'?'var(--green)':'var(--red)'};">R$ ${fmt(total)}</span></div>`;}
 }
@@ -1476,7 +1493,18 @@ function deviaCard(d,i,ctx){
   </div>`;
 }
 
-function renderDevia(){const el=document.getElementById('devia-list');state = normalizeState(state); if(!state.devias.length){el.innerHTML='<div class="empty">Nenhuma anotação ainda.</div>';return;}el.innerHTML=state.devias.map((d,i)=>deviaCard(d,i,'main')).join('');}
+function renderDevia(){
+  const el=document.getElementById('devia-list');
+  state = normalizeState(state);
+  if(!state.devias.length){el.innerHTML='<div class="empty">Nenhuma anotação ainda.</div>';return;}
+  const termo = termoBuscaGlobal();
+  const comIdx = state.devias.map((d,i)=>({d,i})).filter(({d})=> !termo || (d.nome||'').toLowerCase().includes(termo) || (d.det||'').toLowerCase().includes(termo));
+  if(!comIdx.length){
+    el.innerHTML = termo ? `<div class="empty">Nenhum resultado para "${escapeHTML(termo)}".</div>` : '<div class="empty">Nenhuma anotação ainda.</div>';
+    return;
+  }
+  el.innerHTML=comIdx.map(({d,i})=>deviaCard(d,i,'main')).join('');
+}
 function eRenderDevia(){const el=document.getElementById('edevia-list');editState = normalizeState(editState); if(!editState.devias.length){el.innerHTML='<div class="empty">Nenhuma anotação.</div>';return;}el.innerHTML=editState.devias.map((d,i)=>deviaCard(d,i,'edit')).join('');}
 
 // ===== PIZZAS IFOOD =====
@@ -1581,14 +1609,14 @@ function horarioEntregadorTexto(e){
 function entregadorCard(e,i,ctx){
   const horario = horarioEntregadorTexto(e);
   return `<div class="item-card" style="align-items:flex-start;">
-    <div class="item-left">
-      <div class="item-desc" style="font-size:15px;font-weight:800;">${escapeHTML(e.nome)}</div>
-      ${horario?`<div style="font-size:12px;color:var(--text);margin-top:3px;"><span class="func-horario">${horario}</span></div>`:''}
-      <div style="font-size:12px;color:var(--text);margin-top:3px;">${e.qtd||0} entrega(s) &nbsp;·&nbsp; Taxa: <strong>R$ ${fmt(e.taxa)}</strong></div>
-      ${e.maquininha?`<div style="font-size:12px;color:var(--text);margin-top:2px;">Maquininha: <strong>${escapeHTML(e.maquininha)}</strong></div>`:''}
-      <div style="font-size:12px;color:var(--purple);margin-top:2px;">Dinheiro (interno): R$ ${fmt(e.dinheiro)}</div>
+    <div class="item-left" style="min-width:0;">
+      <div class="item-desc" style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(e.nome)}</div>
+      ${horario?`<div style="font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;">${horario}</div>`:''}
+      <div style="font-size:11px;color:var(--text);margin-top:3px;">${e.qtd||0}x &nbsp;·&nbsp; R$ ${fmt(e.taxa)}</div>
+      ${e.maquininha?`<div style="font-size:11px;color:var(--text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHTML(e.maquininha)}</div>`:''}
+      <div style="font-size:11px;color:var(--purple);margin-top:2px;">Interno: R$ ${fmt(e.dinheiro)}</div>
     </div>
-    <div class="item-actions">
+    <div class="item-actions" style="flex-direction:column;">
       <button onclick="${ctx==='edit'?'eEditEntregador':'editEntregador'}(${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
       <button onclick="${ctx==='edit'?'eRemEntregador':'remEntregador'}(${i})" class="btn btn-red" style="padding:3px 7px;font-size:11px;">✕</button>
     </div>
@@ -1598,7 +1626,13 @@ function _renderEntregList(listId, arr, ctx){
   const el=document.getElementById(listId);
   if(!el) return;
   if(!arr||!arr.length){ el.innerHTML='<div class="empty">Nenhum moto fixo ainda.</div>'; return; }
-  el.innerHTML = arr.map((e,i)=>entregadorCard(e,i,ctx)).join('');
+  const termo = ctx==='main' ? termoBuscaGlobal() : '';
+  const comIdx = arr.map((e,i)=>({e,i})).filter(({e})=> !termo || (e.nome||'').toLowerCase().includes(termo) || (e.maquininha||'').toLowerCase().includes(termo));
+  if(!comIdx.length){
+    el.innerHTML = termo ? `<div class="empty">Nenhum resultado para "${escapeHTML(termo)}".</div>` : '<div class="empty">Nenhum moto fixo ainda.</div>';
+    return;
+  }
+  el.innerHTML = comIdx.map(({e,i})=>entregadorCard(e,i,ctx)).join('');
 }
 function renderEntregadores(){ state = normalizeState(state); _renderEntregList('entreg-list', state.entregadores, 'main'); }
 function eRenderEntregadores(){ editState = normalizeState(editState); _renderEntregList('eentreg-list', editState.entregadores, 'edit'); }

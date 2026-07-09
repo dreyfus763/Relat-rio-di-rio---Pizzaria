@@ -79,6 +79,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--green);}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .sec-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
+.func-entreg-wrap{display:flex;gap:12px;align-items:flex-start;}
 /* BUTTONS */
 .btn{padding:7px 14px;border-radius:7px;font-size:13px;cursor:pointer;font-weight:700;border:none;font-family:inherit;transition:opacity .15s;}
 .btn:hover{opacity:.85;}
@@ -95,7 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .func-card{border-radius:8px;border:1px solid var(--border);padding:11px 12px;margin-bottom:8px;background:var(--surface2);position:relative;}
 .func-card.free{border-color:var(--purple);background:var(--purple-lt);}
 .func-card.calc{border-color:var(--calcred);background:var(--calcred-lt);}
-.func-name{font-size:15px;font-weight:700;}
+.func-name{font-size:12px;font-weight:800;letter-spacing:-.01em;}
 /* Easter egg: enquanto o Fabinho estiver com turno em aberto (ver funcCard),
    o card dele inteiro vira uma mini tempestade — borda pulsando e raios
    piscando espalhados pelo card, não só perto do nome. Puramente CSS, em
@@ -186,7 +187,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .scroll-fab{position:fixed;right:16px;bottom:22px;width:46px;height:46px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25);z-index:150;display:flex;align-items:center;justify-content:center;transition:transform .15s, opacity .15s;}
 .scroll-fab:active{transform:scale(0.92);}
 .scroll-fab.at-bottom{background:var(--surface);color:var(--green);border:1px solid var(--green);}
-@media(max-width:480px){.row2{grid-template-columns:1fr 1fr;}.sec-pair{grid-template-columns:1fr;}}
+@media(max-width:480px){.row2{grid-template-columns:1fr 1fr;}.sec-pair{grid-template-columns:1fr;}.func-entreg-wrap{flex-direction:column;}}
 </style>
 </head>
 <body>
@@ -230,19 +231,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="btn-row" style="margin-bottom:4px;">
         <button class="btn btn-purple" style="flex:1;justify-content:center;" onclick="abrirModalImport()">📥 Importar texto (colar relatório)</button>
       </div>
-      <!-- CAIXA -->
-      <div class="sec">
-        <div class="sec-hdr"><div class="sec-title">💰 Caixa</div></div>
-        <div class="sec-body">
-          <div class="row2" style="margin-bottom:10px;">
-            <div class="fg"><label>Caixa Inicial (R$)</label><input type="text" inputmode="numeric" class="money-input" id="cx-ini" placeholder="0,00" oninput="autoSave()"/></div>
-            <div class="fg"><label>Caixa Final (R$)</label><input type="text" inputmode="numeric" class="money-input" id="cx-fin" placeholder="0,00" oninput="autoSave()"/></div>
+      <!-- CAIXA + MOTO FIXO -->
+      <div class="func-entreg-wrap">
+        <div class="sec" style="flex:1.6;margin-bottom:12px;">
+          <div class="sec-hdr"><div class="sec-title">💰 Caixa</div></div>
+          <div class="sec-body">
+            <div class="row2" style="margin-bottom:10px;">
+              <div class="fg"><label>Caixa Inicial (R$)</label><input type="text" inputmode="numeric" class="money-input" id="cx-ini" placeholder="0,00" oninput="autoSave()"/></div>
+              <div class="fg"><label>Caixa Final (R$)</label><input type="text" inputmode="numeric" class="money-input" id="cx-fin" placeholder="0,00" oninput="autoSave()"/></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div style="font-size:12px;font-weight:700;color:var(--muted);">DEPÓSITOS DO DIA</div>
+              <button class="btn btn-orange" style="padding:4px 10px;font-size:12px;" onclick="abrirModalDep()">+ Depósito</button>
+            </div>
+            <div id="dep-list"><div class="empty">Nenhum depósito hoje ainda.</div></div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:12px;font-weight:700;color:var(--muted);">DEPÓSITOS DO DIA</div>
-            <button class="btn btn-orange" style="padding:4px 10px;font-size:12px;" onclick="abrirModalDep()">+ Depósito</button>
+        </div>
+        <div class="sec" style="flex:1;margin-bottom:12px;">
+          <div class="sec-hdr">
+            <div class="sec-title">Moto Fixo</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-copy" onclick="copiarEntregadores()">📋 Copiar</button>
+              <button class="btn btn-green" onclick="abrirModalEntregador()">+ Moto</button>
+            </div>
           </div>
-          <div id="dep-list"><div class="empty">Nenhum depósito hoje ainda.</div></div>
+          <div class="sec-body">
+            <div id="entreg-list"><div class="empty">Nenhum moto fixo ainda.</div></div>
+          </div>
         </div>
       </div>
 
@@ -291,19 +306,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
 
-      <!-- ANOTAÇÕES + PIZZAS IFOOD -->
-      <div class="sec-pair">
-        <div class="sec" style="margin-bottom:12px;">
-          <div class="sec-hdr">
-            <div class="sec-title">📝 Anotações / Devendo</div>
-            <button class="btn btn-orange" onclick="abrirModalDevia()">+ Anotar</button>
-          </div>
-          <div class="sec-body" id="devia-list"><div class="empty">Nenhuma anotação ainda.</div></div>
+      <!-- ANOTAÇÕES -->
+      <div class="sec">
+        <div class="sec-hdr">
+          <div class="sec-title">📝 Anotações / Devendo</div>
+          <button class="btn btn-orange" onclick="abrirModalDevia()">+ Anotar</button>
         </div>
-        <div class="sec" style="margin-bottom:12px;">
-          <div class="sec-hdr"><div class="sec-title">🍕 Pizzas iFood</div></div>
-          <div class="sec-body" id="piz-box"></div>
-        </div>
+        <div class="sec-body" id="devia-list"><div class="empty">Nenhuma anotação ainda.</div></div>
       </div>
     </div>
 
@@ -363,18 +372,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         ✏️ Editando relatório de <strong id="edit-data-label"></strong>. As alterações são salvas automaticamente.
       </div>
       <!-- mesmas seções de edição -->
-      <div class="sec">
-        <div class="sec-hdr"><div class="sec-title">💰 Caixa</div></div>
-        <div class="sec-body">
-          <div class="row2" style="margin-bottom:10px;">
-            <div class="fg"><label>Caixa Inicial (R$)</label><input type="text" inputmode="numeric" class="money-input" id="ecx-ini" placeholder="0,00" oninput="editAutoSave()"/></div>
-            <div class="fg"><label>Caixa Final (R$)</label><input type="text" inputmode="numeric" class="money-input" id="ecx-fin" placeholder="0,00" oninput="editAutoSave()"/></div>
+      <div class="func-entreg-wrap">
+        <div class="sec" style="flex:1.6;margin-bottom:12px;">
+          <div class="sec-hdr"><div class="sec-title">💰 Caixa</div></div>
+          <div class="sec-body">
+            <div class="row2" style="margin-bottom:10px;">
+              <div class="fg"><label>Caixa Inicial (R$)</label><input type="text" inputmode="numeric" class="money-input" id="ecx-ini" placeholder="0,00" oninput="editAutoSave()"/></div>
+              <div class="fg"><label>Caixa Final (R$)</label><input type="text" inputmode="numeric" class="money-input" id="ecx-fin" placeholder="0,00" oninput="editAutoSave()"/></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <div style="font-size:12px;font-weight:700;color:var(--muted);">DEPÓSITOS</div>
+              <button class="btn btn-orange" style="padding:4px 10px;font-size:12px;" onclick="eAbrirModalDep()">+ Depósito</button>
+            </div>
+            <div id="edep-list"><div class="empty">Nenhum depósito ainda.</div></div>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:12px;font-weight:700;color:var(--muted);">DEPÓSITOS</div>
-            <button class="btn btn-orange" style="padding:4px 10px;font-size:12px;" onclick="eAbrirModalDep()">+ Depósito</button>
+        </div>
+        <div class="sec" style="flex:1;margin-bottom:12px;">
+          <div class="sec-hdr">
+            <div class="sec-title">Moto Fixo</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-copy" onclick="eCopiarEntregadores()">📋 Copiar</button>
+              <button class="btn btn-green" onclick="eAbrirModalEntregador()">+ Moto</button>
+            </div>
           </div>
-          <div id="edep-list"><div class="empty">Nenhum depósito ainda.</div></div>
+          <div class="sec-body">
+            <div id="eentreg-list"><div class="empty">Nenhum moto fixo.</div></div>
+          </div>
         </div>
       </div>
       <div class="sec">
@@ -410,18 +433,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div id="edesp-total" style="display:none;"></div>
         </div>
       </div>
-      <div class="sec-pair">
-        <div class="sec" style="margin-bottom:12px;">
-          <div class="sec-hdr">
-            <div class="sec-title">📝 Anotações / Devendo</div>
-            <button class="btn btn-orange" onclick="eAbrirModalDevia()">+ Anotar</button>
-          </div>
-          <div class="sec-body" id="edevia-list"><div class="empty">Nenhuma anotação.</div></div>
+      <div class="sec">
+        <div class="sec-hdr">
+          <div class="sec-title">📝 Anotações / Devendo</div>
+          <button class="btn btn-orange" onclick="eAbrirModalDevia()">+ Anotar</button>
         </div>
-        <div class="sec" style="margin-bottom:12px;">
-          <div class="sec-hdr"><div class="sec-title">🍕 Pizzas iFood</div></div>
-          <div class="sec-body" id="epiz-box"></div>
-        </div>
+        <div class="sec-body" id="edevia-list"><div class="empty">Nenhuma anotação.</div></div>
       </div>
     </div>
   </div>
@@ -461,19 +478,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <input type="hidden" id="mi-tipo" value="venda"/>
     <input type="hidden" id="mi-idx" value="-1"/>
     <input type="hidden" id="mi-ctx" value="main"/>
-    <div class="row2" style="margin-bottom:10px;">
-      <div class="fg"><label>Valor (R$)</label><input type="text" inputmode="numeric" class="money-input" id="mi-val" placeholder="0,00"/></div>
-      <div class="fg" id="mi-plat-wrap"><label>Plataforma</label>
-        <select id="mi-plat">
-          <option value="Balcão">Balcão</option>
-          <option value="WhatsApp">WhatsApp</option>
-          <option value="Anota AI">Anota AI</option>
-          <option value="Anota AI Divina">Anota AI Divina</option>
-          <option value="Anota AI Santo">Anota AI Santo</option>
-          <option value="Entrega por fora">Entrega por fora</option>
-        </select>
-      </div>
-    </div>
+    <div class="fg" style="margin-bottom:10px;"><label>Valor (R$)</label><input type="text" inputmode="numeric" class="money-input" id="mi-val" placeholder="0,00"/></div>
     <div class="fg" style="margin-bottom:10px;"><label>Descrição</label><input type="text" id="mi-desc" placeholder="ex: Pizza grande + coca 2l"/></div>
     <div class="btn-row">
       <button class="btn btn-green" onclick="salvarItem()">Salvar</button>
@@ -505,14 +510,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-title">Anotação / Devendo</div>
     <input type="hidden" id="md-idx" value="-1"/>
     <input type="hidden" id="md-ctx" value="main"/>
-    <div class="fg" style="margin-bottom:10px;"><label>Nome / descrição</label><textarea id="md-nome" placeholder="ex: Moto João" rows="2" style="resize:vertical;"></textarea></div>
-    <div class="row2" style="margin-bottom:10px;">
-      <div class="fg"><label>Valor (R$) — opcional</label><input type="text" inputmode="numeric" class="money-input" id="md-val" placeholder="0,00"/></div>
-      <div class="fg"><label>Detalhe</label><input type="text" id="md-det" placeholder="ex: maquininha..."/></div>
-    </div>
+    <div class="fg" style="margin-bottom:10px;"><label>Nome / descrição</label><textarea id="md-nome" placeholder="ex: Moto João - levou maquininha" rows="2" style="resize:vertical;"></textarea></div>
+    <div class="fg" style="margin-bottom:10px;"><label>Valor (R$) — opcional</label><input type="text" inputmode="numeric" class="money-input" id="md-val" placeholder="0,00"/></div>
     <div class="btn-row">
       <button class="btn btn-green" onclick="salvarDevia()">Salvar</button>
       <button class="btn btn-gray" onclick="fecharModal('modal-devia')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENTREGADOR -->
+<div class="modal-bg" id="modal-entregador">
+  <div class="modal-box">
+    <div class="modal-title" id="me-title">Adicionar Moto Fixo</div>
+    <input type="hidden" id="me-idx" value="-1"/>
+    <input type="hidden" id="me-ctx" value="main"/>
+    <div class="fg" style="margin-bottom:10px;"><label>Nome do entregador</label><input type="text" id="me-nome" placeholder="ex: Jhonny"/></div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="fg"><label>Qtd. de entregas</label><input type="number" min="0" step="1" id="me-qtd" placeholder="0"/></div>
+      <div class="fg"><label>Total da taxa (R$)</label><input type="text" inputmode="numeric" class="money-input" id="me-taxa" placeholder="0,00"/></div>
+    </div>
+    <div class="fg" style="margin-bottom:10px;"><label>Maquininha que está levando</label><input type="text" id="me-maquininha" placeholder="ex: Maquininha 1 / Stone 2"/></div>
+    <div class="fg" style="margin-bottom:6px;"><label>Valor em dinheiro (R$)</label><input type="text" inputmode="numeric" class="money-input" id="me-dinheiro" placeholder="0,00"/></div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">🔒 Esse valor é só para nossa conferência interna — não entra quando você clicar em "Copiar".</div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="salvarEntregador()">Salvar</button>
+      <button class="btn btn-gray" onclick="fecharModal('modal-entregador')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -792,7 +815,7 @@ let turnoForms = [];
 let funcIsFreelance = false;
 
 function emptyState() {
-  return { cxIni:'', cxFin:'', depositos:[], funcionarios:[], vendas:[], despesas:[], devias:[], pizzas:{p:0,m:0,g:0,gg:0} };
+  return { cxIni:'', cxFin:'', depositos:[], funcionarios:[], vendas:[], despesas:[], devias:[], entregadores:[], pizzas:{p:0,m:0,g:0,gg:0} };
 }
 
 
@@ -805,6 +828,7 @@ function normalizeState(raw) {
   out.vendas = Array.isArray(raw.vendas) ? raw.vendas : [];
   out.despesas = Array.isArray(raw.despesas) ? raw.despesas : [];
   out.devias = Array.isArray(raw.devias) ? raw.devias : [];
+  out.entregadores = Array.isArray(raw.entregadores) ? raw.entregadores : [];
   out.cxIni = raw.cxIni ?? '';
   out.cxFin = raw.cxFin ?? '';
   const rp = (raw.pizzas && typeof raw.pizzas === 'object') ? raw.pizzas : {};
@@ -1032,8 +1056,8 @@ function editSave() {
 }
 
 // ===== RENDER PRINCIPAL =====
-function render() { state = normalizeState(state); renderDep(); renderFunc(); renderVendas(); renderDesp(); renderDevia(); renderPizzas(); }
-function eRender() { editState = normalizeState(editState); eRenderDep(); eRenderFunc(); eRenderVendas(); eRenderDesp(); eRenderDevia(); eRenderPizzas(); }
+function render() { state = normalizeState(state); renderDep(); renderFunc(); renderVendas(); renderDesp(); renderDevia(); renderEntregadores(); }
+function eRender() { editState = normalizeState(editState); eRenderDep(); eRenderFunc(); eRenderVendas(); eRenderDesp(); eRenderDevia(); eRenderEntregadores(); }
 
 // ===== DEPÓSITOS =====
 function depCard(d,i,ctx){
@@ -1233,12 +1257,12 @@ function funcCard(f, i, ctx) {
     ${stormBolts}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
       <div style="min-width:0;">
-        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           ${statusDot}
           <span class="func-name">${escapeHTML(f.nome)}</span>
-          <span class="pill ${f.freelance?'pill-free':'pill-func'}">${f.freelance?'Freelance':'Funcionário'}</span>
+          <div class="func-turno-row" style="margin-top:0;">${turnosHtml}</div>
+          ${f.freelance?'<span class="pill pill-free">Freelance</span>':''}
         </div>
-        <div class="func-turno-row">${turnosHtml}</div>
         ${consumoHtml}${pag}${obs}
       </div>
       <div style="display:flex;gap:5px;flex-shrink:0;">
@@ -1381,14 +1405,12 @@ function salvarFunc(){
 
 // ===== VENDAS / DESPESAS =====
 function itemCard(it,i,tipo,ctx){
-  const platInfo=tipo==='venda'?`<div class="item-plat">${escapeHTML(it.plat)}</div>`:'';
   const cor = tipo==='venda'?'var(--green)':'var(--red)';
   // Valor à esquerda, descrição logo ao lado (mesma linha, separados por um
-  // "-"), botões sempre no canto direito.
+  // "-"), botões sempre no canto direito. Vendas e despesas com a mesma cara.
   return `<div class="item-card">
     <div class="item-left">
       <div class="item-desc"><span class="item-val" style="color:${cor};">R$ ${fmt(it.val)}</span> <span style="color:var(--muted);">-</span> ${escapeHTML(it.desc)}</div>
-      ${platInfo}
     </div>
     <div class="item-actions">
       <button onclick="${ctx==='edit'?'eEditItem':'editItem'}('${tipo}',${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
@@ -1418,16 +1440,14 @@ function eEditItem(tipo,i){_openModalItem(i,'edit',tipo,tipo==='venda'?editState
 function _openModalItem(idx,ctx,tipo,it){
   document.getElementById('mi-tipo').value=tipo;document.getElementById('mi-idx').value=idx;document.getElementById('mi-ctx').value=ctx;
   document.getElementById('mi-title').textContent=tipo==='venda'?(idx>=0?'Editar Venda':'Adicionar Venda'):(idx>=0?'Editar Despesa':'Adicionar Despesa');
-  document.getElementById('mi-plat-wrap').style.display=tipo==='venda'?'flex':'none';
   setMoneyField('mi-val', it?it.val:'');document.getElementById('mi-desc').value=it?it.desc||'':'';
-  document.getElementById('mi-plat').value=it&&it.plat?it.plat:'Balcão';
   abrirModal('modal-item');
 }
 
 function salvarItem(){
-  const tipo=document.getElementById('mi-tipo').value;const val=parseMoney(document.getElementById('mi-val').value);const desc=document.getElementById('mi-desc').value.trim();const plat=document.getElementById('mi-plat').value;const ctx=document.getElementById('mi-ctx').value;
+  const tipo=document.getElementById('mi-tipo').value;const val=parseMoney(document.getElementById('mi-val').value);const desc=document.getElementById('mi-desc').value.trim();const ctx=document.getElementById('mi-ctx').value;
   if(isNaN(val)||!desc){alert('Preencha valor e descrição.');return;}
-  const reg={val,desc,plat};const idx=parseInt(document.getElementById('mi-idx').value);
+  const reg={val,desc};const idx=parseInt(document.getElementById('mi-idx').value);
   const arr=ctx==='edit'?(tipo==='venda'?editState.vendas:editState.despesas):(tipo==='venda'?state.vendas:state.despesas);
   if(idx>=0)arr[idx]=reg;else arr.push(reg);
   fecharModal('modal-item');
@@ -1521,15 +1541,21 @@ function eEditDevia(i){_openModalDevia(i,'edit',editState.devias[i]);}
 
 function _openModalDevia(idx,ctx,d){
   document.getElementById('md-idx').value=idx;document.getElementById('md-ctx').value=ctx;
-  document.getElementById('md-nome').value=d?d.nome||'':'';setMoneyField('md-val', d?d.val:'');document.getElementById('md-det').value=d?d.det||'':'';
+  document.getElementById('md-nome').value=d?d.nome||'':'';setMoneyField('md-val', d?d.val:'');
   abrirModal('modal-devia');
 }
 
 function salvarDevia(){
   const nome=document.getElementById('md-nome').value.trim();if(!nome){alert('Digite o nome.');return;}
-  const val=parseMoney(document.getElementById('md-val').value)||0;const det=document.getElementById('md-det').value.trim();const ctx=document.getElementById('md-ctx').value;
-  const reg={nome,val,det};const idx=parseInt(document.getElementById('md-idx').value);
+  const val=parseMoney(document.getElementById('md-val').value)||0;const ctx=document.getElementById('md-ctx').value;
+  const idx=parseInt(document.getElementById('md-idx').value);
   const arr=ctx==='edit'?editState.devias:state.devias;
+  // Não existe mais campo "Detalhe" no formulário — o texto extra agora vai
+  // direto no nome/descrição. Mas se o registro já tinha um "det" (por
+  // exemplo, categorizado automaticamente na importação: "Devemos"), esse
+  // valor é preservado ao editar, só não é mais editável manualmente aqui.
+  const detExistente = (idx>=0 && arr[idx]) ? (arr[idx].det||'') : '';
+  const reg={nome,val,det:detExistente};
   if(idx>=0)arr[idx]=reg;else arr.push(reg);
   fecharModal('modal-devia');
   if(ctx==='edit'){eRenderDevia();editSave();}else{renderDevia();save();}
@@ -1537,6 +1563,102 @@ function salvarDevia(){
 
 function remDevia(i){const d=state.devias[i];if(!confirm(`Excluir "${d?d.nome:'esta anotação'}"?`))return;state.devias.splice(i,1);renderDevia();save();}
 function eRemDevia(i){const d=editState.devias[i];if(!confirm(`Excluir "${d?d.nome:'esta anotação'}"?`))return;editState.devias.splice(i,1);eRenderDevia();editSave();}
+
+// ===== ENTREGADORES =====
+// Card com 4 campos: nome, quantidade de entregas, total da taxa de entrega
+// e valor em dinheiro (esse último é só conferência interna — nunca entra
+// no texto copiado, que segue o padrão de planilha: DATA | MOTOBOY | QTD | TAXA).
+function entregadorCard(e,i,ctx){
+  return `<div class="item-card" style="align-items:flex-start;">
+    <div class="item-left">
+      <div class="item-desc" style="font-size:15px;font-weight:800;">${escapeHTML(e.nome)}</div>
+      <div style="font-size:12px;color:var(--text);margin-top:3px;">${e.qtd||0} entrega(s) &nbsp;·&nbsp; 💵 Taxa: <strong>R$ ${fmt(e.taxa)}</strong></div>
+      ${e.maquininha?`<div style="font-size:12px;color:var(--text);margin-top:2px;">🖲️ Maquininha: <strong>${escapeHTML(e.maquininha)}</strong></div>`:''}
+      <div style="font-size:12px;color:var(--purple);margin-top:2px;">🔒 Dinheiro (interno): R$ ${fmt(e.dinheiro)}</div>
+    </div>
+    <div class="item-actions">
+      <button onclick="${ctx==='edit'?'eEditEntregador':'editEntregador'}(${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
+      <button onclick="${ctx==='edit'?'eRemEntregador':'remEntregador'}(${i})" class="btn btn-red" style="padding:3px 7px;font-size:11px;">✕</button>
+    </div>
+  </div>`;
+}
+function _renderEntregList(listId, arr, ctx){
+  const el=document.getElementById(listId);
+  if(!el) return;
+  if(!arr||!arr.length){ el.innerHTML='<div class="empty">Nenhum moto fixo ainda.</div>'; return; }
+  el.innerHTML = arr.map((e,i)=>entregadorCard(e,i,ctx)).join('');
+}
+function renderEntregadores(){ state = normalizeState(state); _renderEntregList('entreg-list', state.entregadores, 'main'); }
+function eRenderEntregadores(){ editState = normalizeState(editState); _renderEntregList('eentreg-list', editState.entregadores, 'edit'); }
+
+function abrirModalEntregador(){_openModalEntregador(-1,'main',null);}
+function editEntregador(i){_openModalEntregador(i,'main',state.entregadores[i]);}
+function eAbrirModalEntregador(){_openModalEntregador(-1,'edit',null);}
+function eEditEntregador(i){_openModalEntregador(i,'edit',editState.entregadores[i]);}
+
+function _openModalEntregador(idx,ctx,e){
+  document.getElementById('me-idx').value=idx;
+  document.getElementById('me-ctx').value=ctx;
+  document.getElementById('me-title').textContent=idx>=0?'Editar Moto Fixo':'Adicionar Moto Fixo';
+  document.getElementById('me-nome').value=e?e.nome||'':'';
+  document.getElementById('me-qtd').value=e?e.qtd||'':'';
+  setMoneyField('me-taxa', e?e.taxa:'');
+  document.getElementById('me-maquininha').value=e?e.maquininha||'':'';
+  setMoneyField('me-dinheiro', e?e.dinheiro:'');
+  abrirModal('modal-entregador');
+}
+
+function salvarEntregador(){
+  const nome=document.getElementById('me-nome').value.trim();
+  if(!nome){ alert('Digite o nome do entregador.'); return; }
+  const qtd=parseInt(document.getElementById('me-qtd').value,10)||0;
+  const taxa=parseMoney(document.getElementById('me-taxa').value)||0;
+  const maquininha=document.getElementById('me-maquininha').value.trim();
+  const dinheiro=parseMoney(document.getElementById('me-dinheiro').value)||0;
+  const reg={nome,qtd,taxa,maquininha,dinheiro};
+  const idx=parseInt(document.getElementById('me-idx').value);
+  const ctx=document.getElementById('me-ctx').value;
+  const arr=ctx==='edit'?editState.entregadores:state.entregadores;
+  if(idx>=0)arr[idx]=reg;else arr.push(reg);
+  fecharModal('modal-entregador');
+  if(ctx==='edit'){eRenderEntregadores();editSave();}else{renderEntregadores();save();}
+}
+
+function remEntregador(i){const e=state.entregadores[i];if(!confirm(`Excluir "${e?e.nome:'este moto fixo'}"?`))return;state.entregadores.splice(i,1);renderEntregadores();save();}
+function eRemEntregador(i){const e=editState.entregadores[i];if(!confirm(`Excluir "${e?e.nome:'este moto fixo'}"?`))return;editState.entregadores.splice(i,1);eRenderEntregadores();editSave();}
+
+// Data no formato "DD/MM" — igual à coluna DATA da planilha de referência.
+function diaMes(dateKey){
+  if(!dateKey) return '';
+  const partes = dateKey.split('-');
+  if(partes.length<3) return '';
+  const [, m, d] = partes;
+  return `${d}/${m}`;
+}
+// Número "limpo" (sem formatação de moeda, sem separador de milhar) — é
+// assim que a coluna VALOR EM TAXAS aparece na planilha de referência
+// (ex: "66.5", não "R$ 66,50"), pronto pra colar numa célula e já funcionar
+// como número.
+function numeroLimpoPlanilha(n){
+  const v = parseFloat(n)||0;
+  return String(v);
+}
+function _gerarTextoEntregadores(arr, dateKey){
+  const dataFmt = diaMes(dateKey || todayStr());
+  let txt = 'DATA\tMOTOBOY\tQUANTIDADE DE ENTREGAS\tVALOR EM TAXAS\n';
+  arr.forEach(e=>{
+    txt += `${dataFmt}\t${(e.nome||'').toUpperCase()}\t${e.qtd||0}\t${numeroLimpoPlanilha(e.taxa)}\n`;
+  });
+  return txt.trim();
+}
+function copiarEntregadores(){
+  if(!state.entregadores.length){ alert('Nenhum moto fixo para copiar.'); return; }
+  copiar(_gerarTextoEntregadores(state.entregadores, currentDate));
+}
+function eCopiarEntregadores(){
+  if(!editState.entregadores.length){ alert('Nenhum moto fixo para copiar.'); return; }
+  copiar(_gerarTextoEntregadores(editState.entregadores, editDate));
+}
 
 // ===== GERAR TEXTO =====
 function gerarTexto(st,dk){
@@ -1579,7 +1701,7 @@ function gerarTexto(st,dk){
     });
     txt+='\n';
   }
-  if(st.vendas&&st.vendas.length){txt+='VENDAS:\n';st.vendas.forEach(v=>{txt+=`${fmt(v.val)} - ${v.desc} (${v.plat})\n`;});txt+=`Total vendas: R$ ${fmt(st.vendas.reduce((s,v)=>s+v.val,0))}\n\n`;}
+  if(st.vendas&&st.vendas.length){txt+='VENDAS:\n';st.vendas.forEach(v=>{txt+=`${fmt(v.val)} - ${v.desc}\n`;});txt+=`Total vendas: R$ ${fmt(st.vendas.reduce((s,v)=>s+v.val,0))}\n\n`;}
   if(st.despesas&&st.despesas.length){txt+='DESPESAS:\n';st.despesas.forEach(d=>{txt+=`${fmt(d.val)} - ${d.desc}\n`;});txt+=`Total despesas: R$ ${fmt(st.despesas.reduce((s,d)=>s+d.val,0))}\n\n`;}
   if(st.pizzas){
     const pz=st.pizzas;const totalPz=(pz.p||0)+(pz.m||0)+(pz.g||0)+(pz.gg||0);
@@ -2251,7 +2373,7 @@ function copiarSecao(tipo){
   // Sem título de seção aqui — o botão "Copiar" é para colar só a lista dos
   // itens em si (o título "VENDAS:"/"DESPESAS:" só existe no relatório
   // completo, gerado por "Copiar relatório completo").
-  arr.forEach(it=>{txt+=`${fmt(it.val)} - ${escapeHTML(it.desc)}${tipo==='vendas'?' ('+it.plat+')':''}\n`;});
+  arr.forEach(it=>{txt+=`${fmt(it.val)} - ${escapeHTML(it.desc)}\n`;});
   copiar(txt.trim());
 }
 function copiarTudo(){copiar(gerarTexto(state,currentDate));}
@@ -2553,6 +2675,11 @@ window.abrirModalItem=abrirModalItem;window.eAbrirModalItem=eAbrirModalItem;
 window.editItem=editItem;window.eEditItem=eEditItem;
 window.remItem=remItem;window.eRemItem=eRemItem;window.salvarItem=salvarItem;
 window.abrirModalDevia=abrirModalDevia;window.eAbrirModalDevia=eAbrirModalDevia;
+window.abrirModalEntregador=abrirModalEntregador;window.eAbrirModalEntregador=eAbrirModalEntregador;
+window.editEntregador=editEntregador;window.eEditEntregador=eEditEntregador;
+window.remEntregador=remEntregador;window.eRemEntregador=eRemEntregador;
+window.salvarEntregador=salvarEntregador;
+window.copiarEntregadores=copiarEntregadores;window.eCopiarEntregadores=eCopiarEntregadores;
 window.editDevia=editDevia;window.eEditDevia=eEditDevia;
 // Nota: editFunc/editItem/editDevia já são as funções referenciadas pelos onclick
 // dos cards na tela "Anotar" — precisam estar expostas em window, assim como

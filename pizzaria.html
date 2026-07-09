@@ -527,12 +527,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <input type="hidden" id="me-ctx" value="main"/>
     <div class="fg" style="margin-bottom:10px;"><label>Nome do entregador</label><input type="text" id="me-nome" placeholder="ex: Jhonny"/></div>
     <div class="row2" style="margin-bottom:10px;">
+      <div class="fg"><label>Chegou</label><input type="time" id="me-ent"/></div>
+      <div class="fg"><label>Saiu</label><input type="time" id="me-sai"/></div>
+    </div>
+    <div class="row2" style="margin-bottom:10px;">
       <div class="fg"><label>Qtd. de entregas</label><input type="number" min="0" step="1" id="me-qtd" placeholder="0"/></div>
       <div class="fg"><label>Total da taxa (R$)</label><input type="text" inputmode="numeric" class="money-input" id="me-taxa" placeholder="0,00"/></div>
     </div>
     <div class="fg" style="margin-bottom:10px;"><label>Maquininha que está levando</label><input type="text" id="me-maquininha" placeholder="ex: Maquininha 1 / Stone 2"/></div>
     <div class="fg" style="margin-bottom:6px;"><label>Valor em dinheiro (R$)</label><input type="text" inputmode="numeric" class="money-input" id="me-dinheiro" placeholder="0,00"/></div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">🔒 Esse valor é só para nossa conferência interna — não entra quando você clicar em "Copiar".</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Esse valor é só para nossa conferência interna — não entra quando você clicar em "Copiar".</div>
     <div class="btn-row">
       <button class="btn btn-green" onclick="salvarEntregador()">Salvar</button>
       <button class="btn btn-gray" onclick="fecharModal('modal-entregador')">Cancelar</button>
@@ -1564,17 +1568,25 @@ function salvarDevia(){
 function remDevia(i){const d=state.devias[i];if(!confirm(`Excluir "${d?d.nome:'esta anotação'}"?`))return;state.devias.splice(i,1);renderDevia();save();}
 function eRemDevia(i){const d=editState.devias[i];if(!confirm(`Excluir "${d?d.nome:'esta anotação'}"?`))return;editState.devias.splice(i,1);eRenderDevia();editSave();}
 
-// ===== ENTREGADORES =====
-// Card com 4 campos: nome, quantidade de entregas, total da taxa de entrega
-// e valor em dinheiro (esse último é só conferência interna — nunca entra
-// no texto copiado, que segue o padrão de planilha: DATA | MOTOBOY | QTD | TAXA).
+// ===== ENTREGADORES (Moto Fixo) =====
+// Card com nome, horário (chegou/saiu), quantidade de entregas, total da
+// taxa, maquininha e valor em dinheiro (esse último é só conferência
+// interna — nunca entra no texto copiado, que segue o padrão de planilha:
+// DATA | MOTOBOY | QTD | TAXA | HORÁRIO).
+function horarioEntregadorTexto(e){
+  if(e.ent && e.sai) return `${e.ent} até ${e.sai}`;
+  if(e.ent) return `${e.ent} até agora`;
+  return '';
+}
 function entregadorCard(e,i,ctx){
+  const horario = horarioEntregadorTexto(e);
   return `<div class="item-card" style="align-items:flex-start;">
     <div class="item-left">
       <div class="item-desc" style="font-size:15px;font-weight:800;">${escapeHTML(e.nome)}</div>
-      <div style="font-size:12px;color:var(--text);margin-top:3px;">${e.qtd||0} entrega(s) &nbsp;·&nbsp; 💵 Taxa: <strong>R$ ${fmt(e.taxa)}</strong></div>
-      ${e.maquininha?`<div style="font-size:12px;color:var(--text);margin-top:2px;">🖲️ Maquininha: <strong>${escapeHTML(e.maquininha)}</strong></div>`:''}
-      <div style="font-size:12px;color:var(--purple);margin-top:2px;">🔒 Dinheiro (interno): R$ ${fmt(e.dinheiro)}</div>
+      ${horario?`<div style="font-size:12px;color:var(--text);margin-top:3px;"><span class="func-horario">${horario}</span></div>`:''}
+      <div style="font-size:12px;color:var(--text);margin-top:3px;">${e.qtd||0} entrega(s) &nbsp;·&nbsp; Taxa: <strong>R$ ${fmt(e.taxa)}</strong></div>
+      ${e.maquininha?`<div style="font-size:12px;color:var(--text);margin-top:2px;">Maquininha: <strong>${escapeHTML(e.maquininha)}</strong></div>`:''}
+      <div style="font-size:12px;color:var(--purple);margin-top:2px;">Dinheiro (interno): R$ ${fmt(e.dinheiro)}</div>
     </div>
     <div class="item-actions">
       <button onclick="${ctx==='edit'?'eEditEntregador':'editEntregador'}(${i})" class="btn btn-gray" style="padding:3px 7px;font-size:11px;">✏️</button>
@@ -1601,6 +1613,8 @@ function _openModalEntregador(idx,ctx,e){
   document.getElementById('me-ctx').value=ctx;
   document.getElementById('me-title').textContent=idx>=0?'Editar Moto Fixo':'Adicionar Moto Fixo';
   document.getElementById('me-nome').value=e?e.nome||'':'';
+  document.getElementById('me-ent').value=e?e.ent||'':'';
+  document.getElementById('me-sai').value=e?e.sai||'':'';
   document.getElementById('me-qtd').value=e?e.qtd||'':'';
   setMoneyField('me-taxa', e?e.taxa:'');
   document.getElementById('me-maquininha').value=e?e.maquininha||'':'';
@@ -1611,11 +1625,13 @@ function _openModalEntregador(idx,ctx,e){
 function salvarEntregador(){
   const nome=document.getElementById('me-nome').value.trim();
   if(!nome){ alert('Digite o nome do entregador.'); return; }
+  const ent=document.getElementById('me-ent').value;
+  const sai=document.getElementById('me-sai').value;
   const qtd=parseInt(document.getElementById('me-qtd').value,10)||0;
   const taxa=parseMoney(document.getElementById('me-taxa').value)||0;
   const maquininha=document.getElementById('me-maquininha').value.trim();
   const dinheiro=parseMoney(document.getElementById('me-dinheiro').value)||0;
-  const reg={nome,qtd,taxa,maquininha,dinheiro};
+  const reg={nome,ent,sai,qtd,taxa,maquininha,dinheiro};
   const idx=parseInt(document.getElementById('me-idx').value);
   const ctx=document.getElementById('me-ctx').value;
   const arr=ctx==='edit'?editState.entregadores:state.entregadores;
@@ -1645,9 +1661,9 @@ function numeroLimpoPlanilha(n){
 }
 function _gerarTextoEntregadores(arr, dateKey){
   const dataFmt = diaMes(dateKey || todayStr());
-  let txt = 'DATA\tMOTOBOY\tQUANTIDADE DE ENTREGAS\tVALOR EM TAXAS\n';
+  let txt = 'DATA\tMOTOBOY\tQUANTIDADE DE ENTREGAS\tVALOR EM TAXAS\tHORÁRIO\n';
   arr.forEach(e=>{
-    txt += `${dataFmt}\t${(e.nome||'').toUpperCase()}\t${e.qtd||0}\t${numeroLimpoPlanilha(e.taxa)}\n`;
+    txt += `${dataFmt}\t${(e.nome||'').toUpperCase()}\t${e.qtd||0}\t${numeroLimpoPlanilha(e.taxa)}\t${horarioEntregadorTexto(e)}\n`;
   });
   return txt.trim();
 }

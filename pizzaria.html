@@ -112,6 +112,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   50%{opacity:1;}
   54%{opacity:0;}
 }
+/* Easter egg: pétalas de cerejeira caindo pelo card do Fernando (ver
+   funcCard). Puramente CSS, em loop infinito — "top" animado em % pra
+   atravessar a altura do card inteiro, seja qual for o tamanho dele. */
+.sakura-overlay{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:8px;z-index:1;}
+.sakura-petal{position:absolute;top:-10%;left:var(--x,10%);width:var(--size,10px);height:var(--size,10px);border-radius:0 100% 0 100%;opacity:0;animation:sakuraFall var(--dur,4s) linear infinite;animation-delay:var(--d,0s);box-shadow:0 0 4px rgba(255,158,199,.5);}
+@keyframes sakuraFall{
+  0%{top:-10%;transform:translateX(0) rotate(0deg);opacity:0;}
+  10%{opacity:.9;}
+  50%{transform:translateX(14px) rotate(170deg);}
+  90%{opacity:.85;}
+  100%{top:110%;transform:translateX(-10px) rotate(320deg);opacity:0;}
+}
 .func-turno{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .func-turno-row{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
 .func-horario{font-size:13px;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:'SF Mono',Consolas,monospace;letter-spacing:.01em;}
@@ -855,15 +867,25 @@ function parseMoney(value) {
   return Number(s);
 }
 
-// ===== MÁSCARA DE MOEDA (estilo calculadora) =====
-// Formata uma sequência de DÍGITOS DIGITADOS (centavos) para o texto "0,00"
-// — usado enquanto a pessoa está digitando no campo.
+// ===== MÁSCARA DE MOEDA (digitação normal: inteiro primeiro, depois decimais) =====
+// Digitar "42" deixa "42" no campo — não "0,42" como seria no estilo
+// calculadora antigo (que enchia da direita pra esquerda, tipo POS). Se
+// quiser centavos, digita a vírgula: "42,5". Ao sair do campo (blur), o
+// valor é arredondado para duas casas: "42" vira "42,00".
 function formatMoneyInput(raw){
-  const digits = String(raw??'').replace(/[^\d]/g,'');
-  if(!digits) return '';
-  const n = parseInt(digits,10);
-  const cents = (n/100).toFixed(2).replace('.', ',');
-  return cents.replace(/\B(?=(\d{3})+(?!\d)(?=,))/g, '.');
+  let s = String(raw??'').replace(/[^\d,]/g,'');
+  const primeiraVirgula = s.indexOf(',');
+  if(primeiraVirgula>=0){
+    // só a primeira vírgula digitada conta; outras que a pessoa digite depois são ignoradas
+    s = s.slice(0,primeiraVirgula+1) + s.slice(primeiraVirgula+1).replace(/,/g,'');
+  }
+  let [intPart, decPart] = s.split(',');
+  intPart = (intPart||'').replace(/^0+(?=\d)/,'');
+  if(decPart!==undefined) decPart = decPart.slice(0,2);
+  if(!intPart && decPart===undefined) return '';
+  if(!intPart) intPart='0';
+  intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return decPart!==undefined ? `${intPart},${decPart}` : intPart;
 }
 // Formata um NÚMERO EM REAIS já existente (ex: vindo do banco: 367 ou 367.5)
 // para o texto "367,00" — usado ao carregar um valor salvo num campo.
@@ -872,18 +894,22 @@ function formatMoneyValue(num){
   if(num===null || num===undefined || num==='' || isNaN(n)) return '';
   return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
-// Liga a máscara em todo campo .money-input: cada dígito digitado entra pela
-// direita, como numa calculadora — "25" vira "0,25", continuar digitando "2500"
-// vira "25,00". Funciona tanto para campos já existentes na carga da página
-// quanto para os criados depois (modais), via delegação de evento.
+// Liga a máscara em todo campo .money-input, na ordem normal de digitação.
+// Funciona tanto para campos já existentes na carga da página quanto para
+// os criados depois (modais), via delegação de evento.
 document.addEventListener('input', function(e){
   if(!e.target.classList || !e.target.classList.contains('money-input')) return;
+  e.target.value = formatMoneyInput(e.target.value);
+}, true);
+// Ao sair do campo, arredonda/completa para duas casas decimais — "42" vira
+// "42,00", "42,5" vira "42,50". blur não borbulha, por isso o listener
+// precisa estar na fase de captura (terceiro argumento "true").
+document.addEventListener('blur', function(e){
+  if(!e.target.classList || !e.target.classList.contains('money-input')) return;
   const el = e.target;
-  const prevDigits = (el.dataset.rawDigits||'').replace(/[^\d]/g,'');
-  // pega só os dígitos do valor atual do campo (após a digitação do navegador)
-  const curDigits = el.value.replace(/[^\d]/g,'');
-  el.dataset.rawDigits = curDigits;
-  el.value = formatMoneyInput(curDigits);
+  if(!el.value) return;
+  const n = parseMoney(el.value);
+  if(!isNaN(n)) el.value = formatMoneyValue(n);
 }, true);
 // Preenche um campo .money-input já com a máscara aplicada (usado ao carregar
 // dados salvos ou abrir um item para edição — nunca escrever .value direto
@@ -891,9 +917,8 @@ document.addEventListener('input', function(e){
 function setMoneyField(id, valor){
   const el = document.getElementById(id);
   if(!el) return;
-  if(valor===null || valor===undefined || valor===''){ el.value=''; el.dataset.rawDigits=''; return; }
+  if(valor===null || valor===undefined || valor===''){ el.value=''; return; }
   el.value = formatMoneyValue(valor);
-  el.dataset.rawDigits = el.value.replace(/[^\d]/g,'');
 }
 
 
@@ -1257,8 +1282,30 @@ function funcCard(f, i, ctx) {
       </svg>
     `;
   }
+
+  // Easter egg: o Fernando ganha pétalas de cerejeira caindo suavemente
+  // pelo card dele, sempre que o card aparece — sem condição de horário,
+  // é só um detalhe bonito. Cada pétala nasce com posição, tamanho, duração
+  // e atraso aleatórios a cada renderização, pra nunca cair exatamente igual.
+  const ehFernando = f.nome.trim().toLowerCase()==='fernando';
+  let sakuraOverlay = '';
+  if(ehFernando){
+    let petalsHtml = '';
+    const qtdPetalas = 6;
+    for(let p=0; p<qtdPetalas; p++){
+      const x = (Math.random()*90).toFixed(1);
+      const tamanho = (6 + Math.random()*7).toFixed(1);
+      const duracao = (3.5 + Math.random()*2.4).toFixed(2);
+      const atraso = (Math.random()*4.5).toFixed(2);
+      const tom = Math.random()<0.5 ? '#ffd1e8,#ff9ec7' : '#ffe6f2,#ffb6d9';
+      petalsHtml += `<span class="sakura-petal" style="--x:${x}%;--size:${tamanho}px;--dur:${duracao}s;--d:${atraso}s;background:linear-gradient(135deg,${tom});"></span>`;
+    }
+    sakuraOverlay = `<div class="sakura-overlay" aria-hidden="true">${petalsHtml}</div>`;
+  }
+
   return `<div class="func-card ${f.freelance?'free':''}" data-func-nome="${escapeHTML(f.nome.toLowerCase())}" data-func-status="${status}">
     ${stormBolts}
+    ${sakuraOverlay}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
       <div style="min-width:0;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1382,6 +1429,11 @@ function _openModalFunc(idx,ctx,f,forceFreelance){
   turnos.forEach(t=>addTurnoForm(t.ent||'',t.sai||''));
   if(f) calcFree();
   abrirModal('modal-func');
+  // Foco automático no nome — já dá pra digitar assim que o modal abre, sem
+  // precisar clicar no campo primeiro. Pequeno atraso pra garantir que o
+  // modal já esteja visível antes de focar (evita foco "perdido" em alguns
+  // navegadores quando o elemento ainda está com display:none).
+  setTimeout(()=>{ document.getElementById('mf-nome')?.focus(); }, 50);
 }
 
 function addTurnoForm(ent='',sai=''){

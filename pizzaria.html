@@ -116,13 +116,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
    funcCard). Puramente CSS, em loop infinito — "top" animado em % pra
    atravessar a altura do card inteiro, seja qual for o tamanho dele. */
 .sakura-overlay{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:8px;z-index:1;}
-.sakura-petal{position:absolute;top:-10%;left:var(--x,10%);width:var(--size,10px);height:var(--size,10px);border-radius:0 100% 0 100%;opacity:0;animation:sakuraFall var(--dur,4s) linear infinite;animation-delay:var(--d,0s);box-shadow:0 0 4px rgba(255,158,199,.5);}
+.sakura-petal{position:absolute;top:-10%;left:var(--x,10%);width:var(--size,10px);height:var(--size,10px);opacity:0;animation:sakuraFall var(--dur,2s) linear infinite;animation-delay:var(--d,0s);filter:drop-shadow(0 0 2px rgba(255,158,199,.55));}
 @keyframes sakuraFall{
   0%{top:-10%;transform:translateX(0) rotate(0deg);opacity:0;}
-  10%{opacity:.9;}
-  50%{transform:translateX(14px) rotate(170deg);}
+  10%{opacity:.95;}
+  50%{transform:translateX(16px) rotate(190deg);}
   90%{opacity:.85;}
-  100%{top:110%;transform:translateX(-10px) rotate(320deg);opacity:0;}
+  100%{top:110%;transform:translateX(-12px) rotate(360deg);opacity:0;}
 }
 .func-turno{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5;}
 .func-turno-row{margin-top:5px;display:flex;flex-wrap:wrap;align-items:center;gap:2px;}
@@ -862,8 +862,13 @@ function parseMoney(value) {
   let s = String(value).trim();
   if(!s) return NaN;
   s = s.replace(/\s/g, '').replace(/R\$/gi, '');
-  if(s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
-  else s = s.replace(',', '.');
+  // Vírgula presente = separador decimal (pontos, se houver, são milhar).
+  // Sem vírgula: qualquer ponto é SEMPRE separador de milhar, nunca decimal
+  // — nossa própria máscara (formatMoneyInput) nunca produz ponto como
+  // decimal. Sem essa distinção, "1.650" (mil seiscentos e cinquenta,
+  // digitado como "1650") virava 1.65 (Number lia o ponto como decimal).
+  if(s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else s = s.replace(/\./g, '');
   return Number(s);
 }
 
@@ -1283,22 +1288,30 @@ function funcCard(f, i, ctx) {
     `;
   }
 
-  // Easter egg: o Fernando ganha pétalas de cerejeira caindo suavemente
-  // pelo card dele, sempre que o card aparece — sem condição de horário,
-  // é só um detalhe bonito. Cada pétala nasce com posição, tamanho, duração
-  // e atraso aleatórios a cada renderização, pra nunca cair exatamente igual.
+  // Easter egg: o Fernando ganha pétalas de cerejeira caindo pelo card dele,
+  // sempre que o card aparece — sem condição de horário, é só um detalhe
+  // bonito. Cada pétala é um SVG (forma de pétala de verdade, com uma
+  // nervura central), com posição, tom, tamanho, velocidade e atraso
+  // aleatórios a cada renderização, pra nunca cair exatamente igual — e cai
+  // rápido, tipo vento forte de primavera no Japão.
   const ehFernando = f.nome.trim().toLowerCase()==='fernando';
   let sakuraOverlay = '';
   if(ehFernando){
+    const tonsPetala = ['#ffb7d1','#ff9dc4','#ffd6e8','#ff8fc0','#ffc2dd'];
     let petalsHtml = '';
-    const qtdPetalas = 6;
+    const qtdPetalas = 9;
     for(let p=0; p<qtdPetalas; p++){
       const x = (Math.random()*90).toFixed(1);
-      const tamanho = (6 + Math.random()*7).toFixed(1);
-      const duracao = (3.5 + Math.random()*2.4).toFixed(2);
-      const atraso = (Math.random()*4.5).toFixed(2);
-      const tom = Math.random()<0.5 ? '#ffd1e8,#ff9ec7' : '#ffe6f2,#ffb6d9';
-      petalsHtml += `<span class="sakura-petal" style="--x:${x}%;--size:${tamanho}px;--dur:${duracao}s;--d:${atraso}s;background:linear-gradient(135deg,${tom});"></span>`;
+      const tamanho = (7 + Math.random()*6).toFixed(1);
+      const duracao = (1.5 + Math.random()*1.3).toFixed(2); // queda rápida
+      const atraso = (Math.random()*2.5).toFixed(2);
+      const cor = tonsPetala[Math.floor(Math.random()*tonsPetala.length)];
+      petalsHtml += `<span class="sakura-petal" style="--x:${x}%;--size:${tamanho}px;--dur:${duracao}s;--d:${atraso}s;">
+        <svg viewBox="0 0 12 16" width="100%" height="100%">
+          <path d="M6,0.5 C9,2.2 11,5.8 9.6,9.5 C8.6,12.4 6.8,14.6 6,16 C5.2,14.6 3.4,12.4 2.4,9.5 C1,5.8 3,2.2 6,0.5 Z" fill="${cor}"/>
+          <path d="M6,2.2 L6,13.6" stroke="rgba(255,255,255,.4)" stroke-width="0.5"/>
+        </svg>
+      </span>`;
     }
     sakuraOverlay = `<div class="sakura-overlay" aria-hidden="true">${petalsHtml}</div>`;
   }

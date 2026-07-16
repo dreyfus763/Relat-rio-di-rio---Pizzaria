@@ -2708,30 +2708,51 @@ function minParaHora(min){
 }
 // Ajusta a saída para o "banco de horas": se a saída for de madrugada
 // (menor ou igual à entrada, ex: entrou 18:30 e saiu 02:00), soma 24h na
-// saída — 02:00 vira 26:00. Recebe as strings de entrada e saída do turno.
+// saída — 02:00 vira 26:00. Só ajusta quando temos AMBOS os horários; se a
+// saída estiver em branco (funcionário não anotou), devolve vazio pra ir em
+// branco na planilha mesmo. Recebe as strings de entrada e saída do turno.
 function saidaBancoHoras(entrada, saida){
   const mEnt = horaParaMin(entrada);
   const mSai = horaParaMin(saida);
-  if(mEnt===null || mSai===null) return saida||'';
+  if(mSai===null) return ''; // sem saída anotada -> vai vazio
+  if(mEnt===null) return saida; // sem entrada mas com saída -> manda como veio
   let mFinal = mSai;
   if(mSai <= mEnt) mFinal = mSai + 24*60; // passou da meia-noite
   return minParaHora(mFinal);
 }
 
-// Monta a lista de funcionários com turnos prontos pra planilha (entrada e
-// saída já no formato de banco de horas). Só inclui quem tem pelo menos um
-// turno com entrada e saída preenchidas — freelance e "só consumo" ficam de
-// fora, e turnos ainda em aberto (sem saída) são ignorados.
+// Monta a lista de funcionários com turnos prontos pra planilha. Manda TODO
+// funcionário que tenha ao menos uma entrada OU saída anotada — mesmo que
+// falte a saída (vai o que tem, o resto em branco). Freelance e "só consumo"
+// (sem horário nenhum) ficam de fora. Cada funcionário vai com no máximo 2
+// turnos: turno 1 -> colunas B/C, turno 2 -> colunas D/E. Se tiver 3+ turnos,
+// junta tudo em 2: entrada do 1º turno + saída do penúltimo/último, mantendo
+// o intervalo do meio como 2º par quando dá — na prática a pizzaria usa 1 ou
+// 2 turnos, então isso cobre com folga.
 function montarDadosPlanilha(){
   state = normalizeState(state);
   const dia = parseInt(currentDate.split('-')[2], 10);
   const out = [];
   state.funcionarios.forEach(f=>{
     if(f.freelance || f.fromCalc) return;
-    const turnos = (f.turnos||[])
-      .filter(t=>t.ent && t.sai) // precisa ter entrada E saída
-      .map(t=>({ ent: t.ent, sai: saidaBancoHoras(t.ent, t.sai) }));
-    if(!turnos.length) return;
+    // considera qualquer turno que tenha PELO MENOS um dos horários
+    const turnosBrutos = (f.turnos||[]).filter(t=>t.ent || t.sai);
+    if(!turnosBrutos.length) return; // sem horário nenhum = só consumo, ignora
+
+    let turnos;
+    if(turnosBrutos.length<=2){
+      turnos = turnosBrutos.map(t=>({ ent: t.ent||'', sai: saidaBancoHoras(t.ent, t.sai) }));
+    } else {
+      // 3+ turnos: colapsa em 2 pares. 1º par = 1º turno; 2º par = último
+      // turno (do intervalo do meio pra saída final). Assim nada se perde nos
+      // dois espaços de entrada/saída da planilha.
+      const primeiro = turnosBrutos[0];
+      const ultimo = turnosBrutos[turnosBrutos.length-1];
+      turnos = [
+        { ent: primeiro.ent||'', sai: saidaBancoHoras(primeiro.ent, primeiro.sai) },
+        { ent: ultimo.ent||'', sai: saidaBancoHoras(ultimo.ent, ultimo.sai) }
+      ];
+    }
     out.push({ nome: f.nome, dia, turnos });
   });
   return { dia, funcionarios: out };
@@ -2787,10 +2808,18 @@ async function enviarParaPlanilha(){
     const data = await res.json();
     if(data && data.ok){
       const oks = (data.resultados||[]).filter(r=>r.ok);
+      const criadas = oks.filter(r=>r.criada);
       const falhas = (data.resultados||[]).filter(r=>!r.ok);
       status.style.color = 'var(--green)';
-      status.innerHTML = `✅ Enviado! ${oks.length} funcionário(s) gravado(s) na planilha.` +
-        (falhas.length ? `<br><span style="color:var(--orange);">⚠️ ${falhas.length} não gravado(s): ${falhas.map(f=>escapeHTML(f.nome)+' ('+escapeHTML(f.motivo||'?')+')').join(', ')}</span>` : '');
+      let msg = `✅ Enviado! ${oks.length} funcionário(s) gravado(s) na planilha.`;
+      if(criadas.length){
+        msg += `<br><span style="color:var(--green);">🆕 ${criadas.length} página(s) nova(s) criada(s): ${criadas.map(r=>escapeHTML(r.aba||r.nome)).join(', ')}</span>`;
+      }
+      if(falhas.length){
+        msg += `<br><span style="color:var(--orange);">⚠️ ${falhas.length} precisa(m) de revisão manual (nada foi gravado nesses):<br>` +
+          falhas.map(f=>'• <strong>'+escapeHTML(f.nome)+'</strong>: '+escapeHTML(f.motivo||'?')).join('<br>') + '</span>';
+      }
+      status.innerHTML = msg;
     } else {
       status.style.color = 'var(--red)';
       status.textContent = '❌ A planilha respondeu com erro: ' + (data && data.erro ? data.erro : 'desconhecido');

@@ -149,6 +149,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .item-actions{display:flex;gap:5px;flex-shrink:0;margin-left:8px;}
 .dep-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:6px;}
 .devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:5px;gap:8px;}
+.devia-card.devem{background:var(--green-lt);border-color:rgba(29,158,117,.3);}
 .pill{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
 .pill-func{background:#e8f5e9;color:#2e7d32;}
 .pill-free{background:var(--purple-lt);color:var(--purple);}
@@ -522,6 +523,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-title">Anotação / Devendo</div>
     <input type="hidden" id="md-idx" value="-1"/>
     <input type="hidden" id="md-ctx" value="main"/>
+    <input type="hidden" id="md-tipo" value="devemos"/>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">CATEGORIA</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" id="md-tipo-btn-devemos" class="btn" style="flex:1;" onclick="selecionarTipoDevia('devemos')">Devemos</button>
+      <button type="button" id="md-tipo-btn-devem" class="btn" style="flex:1;" onclick="selecionarTipoDevia('devem')">Devem</button>
+    </div>
     <div class="fg" style="margin-bottom:10px;"><label>Nome / descrição</label><textarea id="md-nome" placeholder="ex: Moto João - levou maquininha" rows="2" style="resize:vertical;"></textarea></div>
     <div class="fg" style="margin-bottom:10px;"><label>Valor (R$) — opcional</label><input type="text" inputmode="numeric" class="money-input" id="md-val" placeholder="0,00"/></div>
     <div class="btn-row">
@@ -843,7 +850,12 @@ function normalizeState(raw) {
   out.funcionarios = Array.isArray(raw.funcionarios) ? raw.funcionarios : [];
   out.vendas = Array.isArray(raw.vendas) ? raw.vendas : [];
   out.despesas = Array.isArray(raw.despesas) ? raw.despesas : [];
-  out.devias = Array.isArray(raw.devias) ? raw.devias : [];
+  out.devias = (Array.isArray(raw.devias) ? raw.devias : []).map(d=>({
+    ...d,
+    // Registros antigos (antes das categorias) e importados sem tipo caem
+    // em "devemos" por padrão — que era o comportamento anterior do card.
+    tipo: d && (d.tipo==='devem'||d.tipo==='devemos') ? d.tipo : 'devemos'
+  }));
   out.entregadores = Array.isArray(raw.entregadores) ? raw.entregadores : [];
   out.cxIni = raw.cxIni ?? '';
   out.cxFin = raw.cxFin ?? '';
@@ -1543,12 +1555,13 @@ function salvarItem(){
 function remItem(tipo,i){const it=tipo==='venda'?state.vendas[i]:state.despesas[i];if(!confirm(`Excluir "${it?it.desc:'este item'}"?`))return;if(tipo==='venda')state.vendas.splice(i,1);else state.despesas.splice(i,1);tipo==='venda'?renderVendas():renderDesp();save();}
 function eRemItem(tipo,i){const it=tipo==='venda'?editState.vendas[i]:editState.despesas[i];if(!confirm(`Excluir "${it?it.desc:'este item'}"?`))return;if(tipo==='venda')editState.vendas.splice(i,1);else editState.despesas.splice(i,1);tipo==='venda'?eRenderVendas():eRenderDesp();editSave();}
 
-// ===== DEVIAS =====
+// ===== DEVIAS (Devemos / Devem) =====
 function deviaCard(d,i,ctx){
-  return `<div class="devia-card">
+  const ehDevem = d.tipo==='devem';
+  return `<div class="devia-card ${ehDevem?'devem':''}">
     <div>
       <div style="font-weight:700;font-size:12px;line-height:1.4;white-space:pre-line;">${escapeHTML(d.nome)}</div>
-      ${d.val?`<div style="color:var(--orange);font-size:12px;font-weight:600;margin-top:1px;">R$ ${fmt(d.val)}</div>`:''}
+      ${d.val?`<div style="color:${ehDevem?'var(--green)':'var(--orange)'};font-size:12px;font-weight:600;margin-top:1px;">R$ ${fmt(d.val)}</div>`:''}
       ${d.det?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${escapeHTML(d.det)}</div>`:''}
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0;">
@@ -1558,19 +1571,33 @@ function deviaCard(d,i,ctx){
   </div>`;
 }
 
-function renderDevia(){
-  const el=document.getElementById('devia-list');
-  state = normalizeState(state);
-  if(!state.devias.length){el.innerHTML='<div class="empty">Nenhuma anotação ainda.</div>';return;}
-  const termo = termoBuscaGlobal();
-  const comIdx = state.devias.map((d,i)=>({d,i})).filter(({d})=> !termo || (d.nome||'').toLowerCase().includes(termo) || (d.det||'').toLowerCase().includes(termo));
+// Agrupa a lista de anotações em duas categorias: "Devemos" (o que a
+// pizzaria deve pagar) e "Devem" (o que devem pra pizzaria).
+function _renderDeviaList(listId, arr, termo){
+  const el=document.getElementById(listId);
+  if(!el) return;
+  if(!arr.length){el.innerHTML='<div class="empty">Nenhuma anotação ainda.</div>';return;}
+  const ctx = listId==='edevia-list'?'edit':'main';
+  const comIdx = arr.map((d,i)=>({d,i})).filter(({d})=> !termo || (d.nome||'').toLowerCase().includes(termo) || (d.det||'').toLowerCase().includes(termo));
   if(!comIdx.length){
     el.innerHTML = termo ? `<div class="empty">Nenhum resultado para "${escapeHTML(termo)}".</div>` : '<div class="empty">Nenhuma anotação ainda.</div>';
     return;
   }
-  el.innerHTML=comIdx.map(({d,i})=>deviaCard(d,i,'main')).join('');
+  const devemos = comIdx.filter(({d})=>(d.tipo||'devemos')==='devemos');
+  const devem = comIdx.filter(({d})=>(d.tipo||'devemos')==='devem');
+  let html='';
+  if(devemos.length){
+    html+=`<div class="func-group-label">🟠 Devemos (${devemos.length})</div>`;
+    html+=devemos.map(({d,i})=>deviaCard(d,i,ctx)).join('');
+  }
+  if(devem.length){
+    html+=`<div class="func-group-label">🟢 Devem pra nós (${devem.length})</div>`;
+    html+=devem.map(({d,i})=>deviaCard(d,i,ctx)).join('');
+  }
+  el.innerHTML=html;
 }
-function eRenderDevia(){const el=document.getElementById('edevia-list');editState = normalizeState(editState); if(!editState.devias.length){el.innerHTML='<div class="empty">Nenhuma anotação.</div>';return;}el.innerHTML=editState.devias.map((d,i)=>deviaCard(d,i,'edit')).join('');}
+function renderDevia(){ state = normalizeState(state); _renderDeviaList('devia-list', state.devias, termoBuscaGlobal()); }
+function eRenderDevia(){ editState = normalizeState(editState); _renderDeviaList('edevia-list', editState.devias, ''); }
 
 // ===== PIZZAS IFOOD =====
 const PIZ_LABELS = { p:'Pequena', m:'Média', g:'Grande', gg:'Gigante' };
@@ -1639,20 +1666,25 @@ function eEditDevia(i){_openModalDevia(i,'edit',editState.devias[i]);}
 function _openModalDevia(idx,ctx,d){
   document.getElementById('md-idx').value=idx;document.getElementById('md-ctx').value=ctx;
   document.getElementById('md-nome').value=d?d.nome||'':'';setMoneyField('md-val', d?d.val:'');
+  selecionarTipoDevia(d?(d.tipo||'devemos'):'devemos');
   abrirModal('modal-devia');
+}
+// Alterna a categoria escolhida (Devemos = a pizzaria deve pagar; Devem =
+// devem pra pizzaria), guardando em campo oculto e destacando o botão ativo.
+function selecionarTipoDevia(tipo){
+  document.getElementById('md-tipo').value=tipo;
+  document.getElementById('md-tipo-btn-devemos').className='btn '+(tipo==='devemos'?'btn-orange':'btn-gray');
+  document.getElementById('md-tipo-btn-devem').className='btn '+(tipo==='devem'?'btn-copy':'btn-gray');
 }
 
 function salvarDevia(){
   const nome=document.getElementById('md-nome').value.trim();if(!nome){alert('Digite o nome.');return;}
   const val=parseMoney(document.getElementById('md-val').value)||0;const ctx=document.getElementById('md-ctx').value;
+  const tipo=document.getElementById('md-tipo').value||'devemos';
   const idx=parseInt(document.getElementById('md-idx').value);
   const arr=ctx==='edit'?editState.devias:state.devias;
-  // Não existe mais campo "Detalhe" no formulário — o texto extra agora vai
-  // direto no nome/descrição. Mas se o registro já tinha um "det" (por
-  // exemplo, categorizado automaticamente na importação: "Devemos"), esse
-  // valor é preservado ao editar, só não é mais editável manualmente aqui.
   const detExistente = (idx>=0 && arr[idx]) ? (arr[idx].det||'') : '';
-  const reg={nome,val,det:detExistente};
+  const reg={nome,val,tipo,det:detExistente};
   if(idx>=0)arr[idx]=reg;else arr.push(reg);
   fecharModal('modal-devia');
   if(ctx==='edit'){eRenderDevia();editSave();}else{renderDevia();save();}
@@ -1824,7 +1856,13 @@ function gerarTexto(st,dk){
       txt+=`PIZZAS PEQUENAS: ${pz.p||0}\nPIZZAS MEDIAS: ${pz.m||0}\nPIZZAS GRANDES: ${pz.g||0}\nPIZZAS GIGANTES: ${pz.gg||0}\nTotal de pizzas iFood: ${totalPz}\n\n`;
     }
   }
-  if(st.devias&&st.devias.length){txt+='ANOTAÇÕES:\n';st.devias.forEach(d=>{txt+=d.nome+(d.val?` - R$ ${fmt(d.val)}`:'')+( d.det?` - ${escapeHTML(d.det)}`:'')+'\n';});}
+  if(st.devias&&st.devias.length){
+    const linhaDevia=d=>d.nome+(d.val?` - R$ ${fmt(d.val)}`:'')+(d.det?` - ${escapeHTML(d.det)}`:'');
+    const devemos=st.devias.filter(d=>(d.tipo||'devemos')==='devemos');
+    const devem=st.devias.filter(d=>(d.tipo||'devemos')==='devem');
+    if(devemos.length){txt+='DEVEMOS:\n';devemos.forEach(d=>{txt+=linhaDevia(d)+'\n';});txt+='\n';}
+    if(devem.length){txt+='DEVEM:\n';devem.forEach(d=>{txt+=linhaDevia(d)+'\n';});}
+  }
   return txt.trim();
 }
 
@@ -2800,6 +2838,7 @@ window.editDevia=editDevia;window.eEditDevia=eEditDevia;
 // dos cards na tela "Anotar" — precisam estar expostas em window, assim como
 // suas versões "e" (edit) já estavam, para que o clique funcione nesse fluxo.
 window.remDevia=remDevia;window.eRemDevia=eRemDevia;window.salvarDevia=salvarDevia;
+window.selecionarTipoDevia=selecionarTipoDevia;
 window.copiarSecao=copiarSecao;window.copiarTudo=copiarTudo;window.copiarVer=copiarVer;
 window.verDia=verDia;window.editarDia=editarDia;window.fecharModal=fecharModal;
 window.toggleHistMes=toggleHistMes;

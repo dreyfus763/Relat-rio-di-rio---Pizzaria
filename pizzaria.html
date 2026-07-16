@@ -79,7 +79,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--green);}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .sec-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
-.func-entreg-wrap{display:flex;gap:12px;align-items:flex-start;}
+.func-entreg-wrap{display:flex;gap:12px;align-items:stretch;}
+.func-entreg-wrap > .sec{display:flex;flex-direction:column;}
+.func-entreg-wrap > .sec > .sec-body{flex:1;}
 /* BUTTONS */
 .btn{padding:7px 14px;border-radius:7px;font-size:13px;cursor:pointer;font-weight:700;border:none;font-family:inherit;transition:opacity .15s;}
 .btn:hover{opacity:.85;}
@@ -148,8 +150,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .item-plat{font-size:11px;color:var(--muted);margin-top:1px;}
 .item-actions{display:flex;gap:5px;flex-shrink:0;margin-left:8px;}
 .dep-card{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:6px;}
-.devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 10px;background:var(--orange-lt);border:1px solid rgba(245,158,11,.35);border-radius:7px;margin-bottom:5px;gap:8px;}
-.devia-card.devem{background:var(--green-lt);border-color:rgba(29,158,117,.3);}
+.devia-card{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 10px;background:var(--green-lt);border:1px solid rgba(29,158,117,.3);border-radius:7px;margin-bottom:5px;gap:8px;}
+.devia-card.devem{background:var(--red-lt);border-color:rgba(226,75,74,.3);}
 .pill{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700;display:inline-block;}
 .pill-func{background:#e8f5e9;color:#2e7d32;}
 .pill-free{background:var(--purple-lt);color:var(--purple);}
@@ -289,33 +291,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
 
-      <!-- VENDAS -->
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">🛒 Vendas</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-copy" onclick="copiarSecao('vendas')">📋 Copiar</button>
-            <button class="btn btn-green" onclick="abrirModalItem('venda')">+ Venda</button>
+      <!-- VENDAS + DESPESAS -->
+      <div class="func-entreg-wrap">
+        <div class="sec" style="flex:1;">
+          <div class="sec-hdr">
+            <div class="sec-title">🛒 Vendas</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-copy" onclick="copiarSecao('vendas')">📋 Copiar</button>
+              <button class="btn btn-green" onclick="abrirModalItem('venda')">+ Venda</button>
+            </div>
+          </div>
+          <div class="sec-body">
+            <div id="vendas-list"><div class="empty">Nenhuma venda ainda.</div></div>
+            <div id="vendas-total" style="display:none;"></div>
           </div>
         </div>
-        <div class="sec-body">
-          <div id="vendas-list"><div class="empty">Nenhuma venda ainda.</div></div>
-          <div id="vendas-total" style="display:none;"></div>
-        </div>
-      </div>
-
-      <!-- DESPESAS -->
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">📋 Despesas</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-copy" onclick="copiarSecao('despesas')">📋 Copiar</button>
-            <button class="btn btn-green" onclick="abrirModalItem('despesa')">+ Despesa</button>
+        <div class="sec" style="flex:1;">
+          <div class="sec-hdr">
+            <div class="sec-title">📋 Despesas</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-copy" onclick="copiarSecao('despesas')">📋 Copiar</button>
+              <button class="btn btn-green" onclick="abrirModalItem('despesa')">+ Despesa</button>
+            </div>
           </div>
-        </div>
-        <div class="sec-body">
-          <div id="desp-list"><div class="empty">Nenhuma despesa ainda.</div></div>
-          <div id="desp-total" style="display:none;"></div>
+          <div class="sec-body">
+            <div id="desp-list"><div class="empty">Nenhuma despesa ainda.</div></div>
+            <div id="desp-total" style="display:none;"></div>
+          </div>
         </div>
       </div>
 
@@ -323,15 +325,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="func-entreg-wrap">
         <div class="sec" style="flex:1;margin-bottom:12px;">
           <div class="sec-hdr">
-            <div class="sec-title">📝 Devemos</div>
-            <button class="btn btn-orange" onclick="abrirModalDevia('devemos')">+ Anotar</button>
+            <div class="sec-title">🟢 Devemos</div>
+            <button class="btn btn-copy" onclick="abrirModalDevia('devemos')">+ Anotar</button>
           </div>
           <div class="sec-body" id="devia-list"><div class="empty">Nada aqui ainda.</div></div>
         </div>
         <div class="sec" style="flex:1;margin-bottom:12px;">
           <div class="sec-hdr">
-            <div class="sec-title">💰 Devem pra nós</div>
-            <button class="btn btn-copy" onclick="abrirModalDevia('devem')">+ Anotar</button>
+            <div class="sec-title">🔴 Devem pra nós</div>
+            <button class="btn btn-red" onclick="abrirModalDevia('devem')">+ Anotar</button>
           </div>
           <div class="sec-body" id="devem-list"><div class="empty">Nada aqui ainda.</div></div>
         </div>
@@ -435,38 +437,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div id="efunc-list"><div class="empty">Nenhum funcionário.</div></div>
         </div>
       </div>
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">🛒 Vendas</div>
-          <button class="btn btn-green" onclick="eAbrirModalItem('venda')">+ Venda</button>
+      <div class="func-entreg-wrap">
+        <div class="sec" style="flex:1;">
+          <div class="sec-hdr">
+            <div class="sec-title">🛒 Vendas</div>
+            <button class="btn btn-green" onclick="eAbrirModalItem('venda')">+ Venda</button>
+          </div>
+          <div class="sec-body">
+            <div id="evendas-list"><div class="empty">Nenhuma venda.</div></div>
+            <div id="evendas-total" style="display:none;"></div>
+          </div>
         </div>
-        <div class="sec-body">
-          <div id="evendas-list"><div class="empty">Nenhuma venda.</div></div>
-          <div id="evendas-total" style="display:none;"></div>
-        </div>
-      </div>
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">📋 Despesas</div>
-          <button class="btn btn-green" onclick="eAbrirModalItem('despesa')">+ Despesa</button>
-        </div>
-        <div class="sec-body">
-          <div id="edesp-list"><div class="empty">Nenhuma despesa.</div></div>
-          <div id="edesp-total" style="display:none;"></div>
+        <div class="sec" style="flex:1;">
+          <div class="sec-hdr">
+            <div class="sec-title">📋 Despesas</div>
+            <button class="btn btn-green" onclick="eAbrirModalItem('despesa')">+ Despesa</button>
+          </div>
+          <div class="sec-body">
+            <div id="edesp-list"><div class="empty">Nenhuma despesa.</div></div>
+            <div id="edesp-total" style="display:none;"></div>
+          </div>
         </div>
       </div>
       <div class="func-entreg-wrap">
         <div class="sec" style="flex:1;">
           <div class="sec-hdr">
-            <div class="sec-title">📝 Devemos</div>
-            <button class="btn btn-orange" onclick="eAbrirModalDevia('devemos')">+ Anotar</button>
+            <div class="sec-title">🟢 Devemos</div>
+            <button class="btn btn-copy" onclick="eAbrirModalDevia('devemos')">+ Anotar</button>
           </div>
           <div class="sec-body" id="edevia-list"><div class="empty">Nada aqui ainda.</div></div>
         </div>
         <div class="sec" style="flex:1;">
           <div class="sec-hdr">
-            <div class="sec-title">💰 Devem pra nós</div>
-            <button class="btn btn-copy" onclick="eAbrirModalDevia('devem')">+ Anotar</button>
+            <div class="sec-title">🔴 Devem pra nós</div>
+            <button class="btn btn-red" onclick="eAbrirModalDevia('devem')">+ Anotar</button>
           </div>
           <div class="sec-body" id="edevem-list"><div class="empty">Nada aqui ainda.</div></div>
         </div>
@@ -1579,7 +1583,7 @@ function deviaCard(d,i,ctx){
   return `<div class="devia-card ${ehDevem?'devem':''}">
     <div>
       <div style="font-weight:700;font-size:12px;line-height:1.4;white-space:pre-line;">${escapeHTML(d.nome)}</div>
-      ${d.val?`<div style="color:${ehDevem?'var(--green)':'var(--orange)'};font-size:12px;font-weight:600;margin-top:1px;">R$ ${fmt(d.val)}</div>`:''}
+      ${d.val?`<div style="color:${ehDevem?'var(--red)':'var(--green)'};font-size:12px;font-weight:600;margin-top:1px;">R$ ${fmt(d.val)}</div>`:''}
       ${d.det?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${escapeHTML(d.det)}</div>`:''}
     </div>
     <div style="display:flex;gap:4px;flex-shrink:0;">
@@ -1693,8 +1697,8 @@ function _openModalDevia(idx,ctx,d,tipoInicial){
 // devem pra pizzaria), guardando em campo oculto e destacando o botão ativo.
 function selecionarTipoDevia(tipo){
   document.getElementById('md-tipo').value=tipo;
-  document.getElementById('md-tipo-btn-devemos').className='btn '+(tipo==='devemos'?'btn-orange':'btn-gray');
-  document.getElementById('md-tipo-btn-devem').className='btn '+(tipo==='devem'?'btn-copy':'btn-gray');
+  document.getElementById('md-tipo-btn-devemos').className='btn '+(tipo==='devemos'?'btn-copy':'btn-gray');
+  document.getElementById('md-tipo-btn-devem').className='btn '+(tipo==='devem'?'btn-red':'btn-gray');
 }
 
 function salvarDevia(){

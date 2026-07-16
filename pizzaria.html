@@ -287,7 +287,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
         </div>
         <div class="sec-body">
-          <button class="btn btn-copy" style="width:100%;justify-content:center;margin-bottom:10px;" onclick="abrirModalPlanilha()">📊 Enviar horários pra planilha</button>
           <div id="func-list"><div class="empty">Nenhum funcionário ainda.</div></div>
         </div>
       </div>
@@ -350,9 +349,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="rel-preview" id="rel-preview"></div>
       <div class="btn-row">
         <button class="btn btn-copy btn-big" onclick="copiarTudo()">📋 Copiar relatório completo</button>
+        <button class="btn btn-green btn-big" onclick="abrirModalPlanilha()">📊 Enviar horários pra planilha</button>
       </div>
       <div style="margin-top:16px;">
-        <button class="btn btn-gray" style="width:100%;padding:10px;" onclick="irHome()">← Voltar ao início</button>
+        <button class="btn btn-gray" id="btn-voltar-rel" style="width:100%;padding:10px;" onclick="voltarDoRelatorio()">← Voltar ao início</button>
       </div>
     </div>
 
@@ -874,6 +874,12 @@ function escapeHTML(str) {
 
 let currentDate = '';
 let state = emptyState();
+// Quando o usuário edita um dia do Histórico, reaproveitamos a MESMA tela do
+// relatório do dia (page-rel) apontando currentDate/state pra aquele dia —
+// assim o histórico é idêntico ao relatório de hoje (abas Anotar/Finalizar,
+// botão de planilha, tudo), sem tela paralela que fica desatualizada. Esta
+// flag lembra que estamos nesse modo pra o "Voltar" ir pro Histórico.
+let editandoHistorico = false;
 let editState = emptyState();
 let editDate = '';
 let autoSaveTimer = null;
@@ -1036,6 +1042,7 @@ async function initHome() {
 }
 
 async function abrirRelatorio() {
+  editandoHistorico = false;
   currentDate = todayStr();
   document.getElementById('hdr-right').textContent = fmtDate(currentDate);
 
@@ -1086,7 +1093,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['anotar','finalizar'][i]===name));
   document.getElementById('tab-anotar').style.display=name==='anotar'?'block':'none';
   document.getElementById('tab-finalizar').style.display=name==='finalizar'?'block':'none';
-  if(name==='finalizar') document.getElementById('rel-preview').textContent=gerarTexto(state,currentDate);
+  if(name==='finalizar'){ document.getElementById('rel-preview').textContent=gerarTexto(state,currentDate); atualizarBotaoVoltar(); }
 }
 
 // ===== BOTÃO FLUTUANTE DE SCROLL =====
@@ -1110,13 +1117,17 @@ function atualizarScrollFab(){
 window.addEventListener('scroll', atualizarScrollFab, {passive:true});
 
 function switchVerTab(name) {
-  document.getElementById('ver-panel').style.display=name==='ver'?'block':'none';
-  document.getElementById('edit-panel').style.display=name==='edit'?'block':'none';
-  document.getElementById('ver-tab-ver').className='btn '+(name==='ver'?'btn-green':'btn-gray');
-  document.getElementById('ver-tab-edit').className='btn '+(name==='edit'?'btn-green':'btn-gray');
+  // "Editar" agora abre o editor COMPLETO (mesma tela do relatório do dia),
+  // não o painel simplificado antigo — por isso, ao clicar em Editar, saímos
+  // desta página e chamamos editarDia. "Ver" continua sendo só a prévia.
+  if(name==='edit'){ editarDia(editDate); return; }
+  document.getElementById('ver-panel').style.display='block';
+  document.getElementById('edit-panel').style.display='none';
+  document.getElementById('ver-tab-ver').className='btn btn-green';
+  document.getElementById('ver-tab-edit').className='btn btn-gray';
   document.getElementById('ver-tab-ver').style.flex='1';document.getElementById('ver-tab-ver').style.borderRadius='7px';
   document.getElementById('ver-tab-edit').style.flex='1';document.getElementById('ver-tab-edit').style.borderRadius='7px';
-  if(name==='ver') document.getElementById('ver-preview').textContent=gerarTexto(editState,editDate);
+  document.getElementById('ver-preview').textContent=gerarTexto(editState,editDate);
 }
 
 // ===== SAVE =====
@@ -1495,7 +1506,8 @@ function _openModalFunc(idx,ctx,f,forceFreelance){
   document.getElementById('mf-turnos').innerHTML='';
   turnoForms=[];
   const turnos=f&&f.turnos&&f.turnos.length?f.turnos:[{ent:'',sai:''}];
-  turnos.forEach(t=>addTurnoForm(t.ent||'',t.sai||''));
+  turnos.forEach(t=>turnoForms.push({ent:t.ent||'',sai:t.sai||''}));
+  redesenharTurnos();
   if(f) calcFree();
   abrirModal('modal-func');
   // Foco automático no nome — já dá pra digitar assim que o modal abre, sem
@@ -1505,14 +1517,47 @@ function _openModalFunc(idx,ctx,f,forceFreelance){
   setTimeout(()=>{ document.getElementById('mf-nome')?.focus(); }, 50);
 }
 
+// Adiciona um turno ao formulário. Cada turno tem entrada, saída e um botão
+// de excluir só dele. Como excluir um turno do meio bagunçaria os índices
+// fixos, ao adicionar/remover a lista inteira é reconstruída a partir dos
+// valores atuais (lerTurnosDoForm) — assim os ids ficam sempre 0..N certinho.
 function addTurnoForm(ent='',sai=''){
-  const idx=turnoForms.length;turnoForms.push({ent,sai});
-  const div=document.createElement('div');div.className='row2';div.style.marginBottom='8px';div.id=`tf-${idx}`;
-  div.innerHTML=`<div class="fg"><label>Entrada ${idx+1}</label><input type="time" id="tf-ent-${idx}" value="${ent}" oninput="calcFree()"/></div><div class="fg"><label>Saída ${idx+1}</label><input type="time" id="tf-sai-${idx}" value="${sai}" oninput="calcFree()"/></div>`;
-  document.getElementById('mf-turnos').appendChild(div);
+  turnoForms.push({ent,sai});
+  redesenharTurnos();
+}
+// Lê o que está digitado agora em cada linha de turno (antes de redesenhar,
+// pra não perder o que a pessoa acabou de digitar).
+function lerTurnosDoForm(){
+  return turnoForms.map((_,i)=>({
+    ent:(document.getElementById(`tf-ent-${i}`)||{}).value||'',
+    sai:(document.getElementById(`tf-sai-${i}`)||{}).value||''
+  }));
+}
+function redesenharTurnos(){
+  const cont=document.getElementById('mf-turnos');
+  if(!cont) return;
+  cont.innerHTML='';
+  turnoForms.forEach((t,idx)=>{
+    const div=document.createElement('div');
+    div.style.display='flex';div.style.gap='6px';div.style.alignItems='flex-end';div.style.marginBottom='8px';
+    div.innerHTML=`
+      <div class="fg" style="flex:1;"><label>Entrada ${idx+1}</label><input type="time" id="tf-ent-${idx}" value="${t.ent||''}" oninput="calcFree()"/></div>
+      <div class="fg" style="flex:1;"><label>Saída ${idx+1}</label><input type="time" id="tf-sai-${idx}" value="${t.sai||''}" oninput="calcFree()"/></div>
+      <button type="button" class="btn btn-red" style="padding:8px 10px;" title="Excluir este turno" onclick="removerTurnoForm(${idx})">✕</button>`;
+    cont.appendChild(div);
+  });
+}
+// Exclui um turno específico. Salva o que está digitado, remove o índice
+// escolhido e redesenha. Sempre deixa pelo menos uma linha em branco.
+function removerTurnoForm(idx){
+  turnoForms = lerTurnosDoForm();
+  turnoForms.splice(idx,1);
+  if(!turnoForms.length) turnoForms.push({ent:'',sai:''});
+  redesenharTurnos();
+  calcFree();
 }
 
-function getTurnos(){return turnoForms.map((_,i)=>({ent:(document.getElementById(`tf-ent-${i}`)||{}).value||'',sai:(document.getElementById(`tf-sai-${i}`)||{}).value||''})).filter(t=>t.ent||t.sai);}
+function getTurnos(){return lerTurnosDoForm().filter(t=>t.ent||t.sai);}
 
 function calcHorasTurnos(turnos){
   let total=0;
@@ -2675,16 +2720,49 @@ async function verDia(dateKey){
 }
 
 async function editarDia(dateKey){
-  editDate=dateKey;
-  document.getElementById('ver-titulo').textContent=fmtDate(dateKey);
-  document.getElementById('edit-data-label').textContent=fmtDate(dateKey);
-  showPage('page-ver');
-  const data=await window._load(dateKey);
-  editState=data?cloneState(data):emptyState();
-  setMoneyField('ecx-ini', editState.cxIni);
-  setMoneyField('ecx-fin', editState.cxFin);
-  eRender();
-  switchVerTab('edit');
+  // Paridade total: edita o dia do histórico na MESMA tela do relatório de
+  // hoje. Apontamos currentDate/state pra esse dia — render(), save(),
+  // switchTab(), o botão de planilha e tudo mais funcionam igualzinho.
+  editandoHistorico = true;
+  editDate = dateKey;
+  currentDate = dateKey;
+  document.getElementById('hdr-right').textContent = fmtDate(dateKey) + ' (histórico)';
+
+  const cached = window._getCached ? window._getCached(dateKey) : null;
+  state = cached ? cloneState(cached) : emptyState();
+  setMoneyField('cx-ini', state.cxIni);
+  setMoneyField('cx-fin', state.cxFin);
+  render();
+  showPage('page-rel');
+  switchTab('anotar');
+  atualizarBotaoVoltar();
+
+  if(window._load){
+    window._load(dateKey).then(data=>{
+      if(data && currentDate===dateKey && JSON.stringify(normalizeState(data)) !== JSON.stringify(normalizeState(state))){
+        state = cloneState(data);
+        setMoneyField('cx-ini', state.cxIni);
+        setMoneyField('cx-fin', state.cxFin);
+        render();
+      }
+    });
+  }
+}
+// Ajusta o botão "Voltar" da aba Finalizar conforme o contexto: se estamos
+// editando um dia do histórico, volta pro Histórico; senão, pra Home.
+function atualizarBotaoVoltar(){
+  const btn = document.getElementById('btn-voltar-rel');
+  if(!btn) return;
+  btn.textContent = editandoHistorico ? '← Voltar ao histórico' : '← Voltar ao início';
+}
+function voltarDoRelatorio(){
+  if(editandoHistorico){
+    editandoHistorico = false;
+    document.getElementById('hdr-right').textContent='';
+    irHistorico();
+  } else {
+    irHome();
+  }
 }
 
 // ===== CALCULADORA DE HORAS (freelance, multi-dia) =====
@@ -3011,6 +3089,7 @@ window.abrirModalFunc=abrirModalFunc;window.eAbrirModalFunc=eAbrirModalFunc;
 window.editFunc=editFunc;window.eEditFunc=eEditFunc;
 window.remFunc=remFunc;window.eRemFunc=eRemFunc;
 window.salvarFunc=salvarFunc;window.addTurnoForm=addTurnoForm;window.calcFree=calcFree;
+window.removerTurnoForm=removerTurnoForm;
 window.abrirModalItem=abrirModalItem;window.eAbrirModalItem=eAbrirModalItem;
 window.editItem=editItem;window.eEditItem=eEditItem;
 window.remItem=remItem;window.eRemItem=eRemItem;window.salvarItem=salvarItem;
@@ -3028,6 +3107,7 @@ window.remDevia=remDevia;window.eRemDevia=eRemDevia;window.salvarDevia=salvarDev
 window.selecionarTipoDevia=selecionarTipoDevia;
 window.copiarSecao=copiarSecao;window.copiarTudo=copiarTudo;window.copiarVer=copiarVer;
 window.verDia=verDia;window.editarDia=editarDia;window.fecharModal=fecharModal;
+window.voltarDoRelatorio=voltarDoRelatorio;window.atualizarBotaoVoltar=atualizarBotaoVoltar;
 window.toggleHistMes=toggleHistMes;
 window.exportarBackup=exportarBackup;window.importarBackup=importarBackup;
 window.showPage=showPage;

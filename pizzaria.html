@@ -319,13 +319,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
       </div>
 
-      <!-- ANOTAÇÕES -->
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">📝 Anotações / Devendo</div>
-          <button class="btn btn-orange" onclick="abrirModalDevia()">+ Anotar</button>
+      <!-- DEVEMOS + DEVEM -->
+      <div class="func-entreg-wrap">
+        <div class="sec" style="flex:1;margin-bottom:12px;">
+          <div class="sec-hdr">
+            <div class="sec-title">📝 Devemos</div>
+            <button class="btn btn-orange" onclick="abrirModalDevia('devemos')">+ Anotar</button>
+          </div>
+          <div class="sec-body" id="devia-list"><div class="empty">Nada aqui ainda.</div></div>
         </div>
-        <div class="sec-body" id="devia-list"><div class="empty">Nenhuma anotação ainda.</div></div>
+        <div class="sec" style="flex:1;margin-bottom:12px;">
+          <div class="sec-hdr">
+            <div class="sec-title">💰 Devem pra nós</div>
+            <button class="btn btn-copy" onclick="abrirModalDevia('devem')">+ Anotar</button>
+          </div>
+          <div class="sec-body" id="devem-list"><div class="empty">Nada aqui ainda.</div></div>
+        </div>
       </div>
     </div>
 
@@ -446,12 +455,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div id="edesp-total" style="display:none;"></div>
         </div>
       </div>
-      <div class="sec">
-        <div class="sec-hdr">
-          <div class="sec-title">📝 Anotações / Devendo</div>
-          <button class="btn btn-orange" onclick="eAbrirModalDevia()">+ Anotar</button>
+      <div class="func-entreg-wrap">
+        <div class="sec" style="flex:1;">
+          <div class="sec-hdr">
+            <div class="sec-title">📝 Devemos</div>
+            <button class="btn btn-orange" onclick="eAbrirModalDevia('devemos')">+ Anotar</button>
+          </div>
+          <div class="sec-body" id="edevia-list"><div class="empty">Nada aqui ainda.</div></div>
         </div>
-        <div class="sec-body" id="edevia-list"><div class="empty">Nenhuma anotação.</div></div>
+        <div class="sec" style="flex:1;">
+          <div class="sec-hdr">
+            <div class="sec-title">💰 Devem pra nós</div>
+            <button class="btn btn-copy" onclick="eAbrirModalDevia('devem')">+ Anotar</button>
+          </div>
+          <div class="sec-body" id="edevem-list"><div class="empty">Nada aqui ainda.</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1571,33 +1589,32 @@ function deviaCard(d,i,ctx){
   </div>`;
 }
 
-// Agrupa a lista de anotações em duas categorias: "Devemos" (o que a
-// pizzaria deve pagar) e "Devem" (o que devem pra pizzaria).
-function _renderDeviaList(listId, arr, termo){
+// Renderiza UMA categoria (devemos ou devem) numa lista própria — cada uma
+// mora no seu próprio card agora, não mais agrupadas dentro de um só.
+function _renderDeviaList(listId, arr, termo, tipoAlvo){
   const el=document.getElementById(listId);
   if(!el) return;
-  if(!arr.length){el.innerHTML='<div class="empty">Nenhuma anotação ainda.</div>';return;}
-  const ctx = listId==='edevia-list'?'edit':'main';
-  const comIdx = arr.map((d,i)=>({d,i})).filter(({d})=> !termo || (d.nome||'').toLowerCase().includes(termo) || (d.det||'').toLowerCase().includes(termo));
+  const ctx = (listId==='edevia-list'||listId==='edevem-list')?'edit':'main';
+  const comIdx = arr.map((d,i)=>({d,i}))
+    .filter(({d})=>(d.tipo||'devemos')===tipoAlvo)
+    .filter(({d})=> !termo || (d.nome||'').toLowerCase().includes(termo) || (d.det||'').toLowerCase().includes(termo));
   if(!comIdx.length){
-    el.innerHTML = termo ? `<div class="empty">Nenhum resultado para "${escapeHTML(termo)}".</div>` : '<div class="empty">Nenhuma anotação ainda.</div>';
+    el.innerHTML = termo ? `<div class="empty">Nenhum resultado para "${escapeHTML(termo)}".</div>` : '<div class="empty">Nada aqui ainda.</div>';
     return;
   }
-  const devemos = comIdx.filter(({d})=>(d.tipo||'devemos')==='devemos');
-  const devem = comIdx.filter(({d})=>(d.tipo||'devemos')==='devem');
-  let html='';
-  if(devemos.length){
-    html+=`<div class="func-group-label">🟠 Devemos (${devemos.length})</div>`;
-    html+=devemos.map(({d,i})=>deviaCard(d,i,ctx)).join('');
-  }
-  if(devem.length){
-    html+=`<div class="func-group-label">🟢 Devem pra nós (${devem.length})</div>`;
-    html+=devem.map(({d,i})=>deviaCard(d,i,ctx)).join('');
-  }
-  el.innerHTML=html;
+  el.innerHTML=comIdx.map(({d,i})=>deviaCard(d,i,ctx)).join('');
 }
-function renderDevia(){ state = normalizeState(state); _renderDeviaList('devia-list', state.devias, termoBuscaGlobal()); }
-function eRenderDevia(){ editState = normalizeState(editState); _renderDeviaList('edevia-list', editState.devias, ''); }
+function renderDevia(){
+  state = normalizeState(state);
+  const termo = termoBuscaGlobal();
+  _renderDeviaList('devia-list', state.devias, termo, 'devemos');
+  _renderDeviaList('devem-list', state.devias, termo, 'devem');
+}
+function eRenderDevia(){
+  editState = normalizeState(editState);
+  _renderDeviaList('edevia-list', editState.devias, '', 'devemos');
+  _renderDeviaList('edevem-list', editState.devias, '', 'devem');
+}
 
 // ===== PIZZAS IFOOD =====
 const PIZ_LABELS = { p:'Pequena', m:'Média', g:'Grande', gg:'Gigante' };
@@ -1658,15 +1675,18 @@ function eDefinirPizza(tipo, valor){
 }
 
 
-function abrirModalDevia(){_openModalDevia(-1,'main',null);}
+function abrirModalDevia(tipoInicial){_openModalDevia(-1,'main',null,tipoInicial);}
 function editDevia(i){_openModalDevia(i,'main',state.devias[i]);}
-function eAbrirModalDevia(){_openModalDevia(-1,'edit',null);}
+function eAbrirModalDevia(tipoInicial){_openModalDevia(-1,'edit',null,tipoInicial);}
 function eEditDevia(i){_openModalDevia(i,'edit',editState.devias[i]);}
 
-function _openModalDevia(idx,ctx,d){
+function _openModalDevia(idx,ctx,d,tipoInicial){
   document.getElementById('md-idx').value=idx;document.getElementById('md-ctx').value=ctx;
   document.getElementById('md-nome').value=d?d.nome||'':'';setMoneyField('md-val', d?d.val:'');
-  selecionarTipoDevia(d?(d.tipo||'devemos'):'devemos');
+  // Ao editar: usa o tipo do próprio registro. Ao adicionar: usa o tipo do
+  // card que abriu o modal (Devemos ou Devem). O usuário ainda pode trocar
+  // no formulário se quiser.
+  selecionarTipoDevia(d?(d.tipo||'devemos'):(tipoInicial||'devemos'));
   abrirModal('modal-devia');
 }
 // Alterna a categoria escolhida (Devemos = a pizzaria deve pagar; Devem =

@@ -287,6 +287,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
         </div>
         <div class="sec-body">
+          <button class="btn btn-copy" style="width:100%;justify-content:center;margin-bottom:10px;" onclick="abrirModalPlanilha()">📊 Enviar horários pra planilha</button>
           <div id="func-list"><div class="empty">Nenhum funcionário ainda.</div></div>
         </div>
       </div>
@@ -607,6 +608,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <button class="btn btn-gray" onclick="voltarImportPaste()">← Voltar</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- MODAL ENVIAR PRA PLANILHA -->
+<div class="modal-bg" id="modal-planilha">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-title">📊 Enviar horários pra planilha</div>
+    <div class="fg" style="margin-bottom:6px;">
+      <label>URL do Web App da planilha (Apps Script)</label>
+      <input type="text" id="pl-url" placeholder="https://script.google.com/macros/s/.../exec"/>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.5;">
+      Cole aqui a URL que o Google gerou ao publicar o Apps Script (termina em <strong>/exec</strong>). Ela fica salva neste aparelho — só precisa configurar uma vez.
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">O QUE SERÁ ENVIADO (dia <span id="pl-dia"></span>)</div>
+    <div id="pl-preview" style="max-height:230px;overflow-y:auto;margin-bottom:12px;"></div>
+    <div class="btn-row">
+      <button class="btn btn-green" id="pl-btn-enviar" onclick="enviarParaPlanilha()">📤 Enviar agora</button>
+      <button class="btn btn-gray" onclick="fecharModal('modal-planilha')">Fechar</button>
+    </div>
+    <div id="pl-status" style="font-size:12px;margin-top:10px;"></div>
   </div>
 </div>
 
@@ -2669,6 +2691,118 @@ async function editarDia(dateKey){
 let calcDias = []; // [{data:'YYYY-MM-DD', ent:'HH:MM', sai:'HH:MM'}]
 let calcEditIdx = -1; // índice do cálculo salvo sendo editado (-1 = novo)
 
+// ===== ENVIAR HORÁRIOS PRA PLANILHA (Google Apps Script) =====
+const PLANILHA_URL_KEY = 'piz_planilha_url';
+
+// Converte "HH:MM" em minutos desde 00:00.
+function horaParaMin(h){
+  if(!h || !/^\d{1,2}:\d{2}$/.test(h)) return null;
+  const [hh,mm] = h.split(':').map(Number);
+  return hh*60+mm;
+}
+// Formata minutos de volta em "HH:MM" (pode passar de 24h, ex: 26:00).
+function minParaHora(min){
+  const hh = Math.floor(min/60);
+  const mm = min%60;
+  return `${hh}:${String(mm).padStart(2,'0')}`;
+}
+// Ajusta a saída para o "banco de horas": se a saída for de madrugada
+// (menor ou igual à entrada, ex: entrou 18:30 e saiu 02:00), soma 24h na
+// saída — 02:00 vira 26:00. Recebe as strings de entrada e saída do turno.
+function saidaBancoHoras(entrada, saida){
+  const mEnt = horaParaMin(entrada);
+  const mSai = horaParaMin(saida);
+  if(mEnt===null || mSai===null) return saida||'';
+  let mFinal = mSai;
+  if(mSai <= mEnt) mFinal = mSai + 24*60; // passou da meia-noite
+  return minParaHora(mFinal);
+}
+
+// Monta a lista de funcionários com turnos prontos pra planilha (entrada e
+// saída já no formato de banco de horas). Só inclui quem tem pelo menos um
+// turno com entrada e saída preenchidas — freelance e "só consumo" ficam de
+// fora, e turnos ainda em aberto (sem saída) são ignorados.
+function montarDadosPlanilha(){
+  state = normalizeState(state);
+  const dia = parseInt(currentDate.split('-')[2], 10);
+  const out = [];
+  state.funcionarios.forEach(f=>{
+    if(f.freelance || f.fromCalc) return;
+    const turnos = (f.turnos||[])
+      .filter(t=>t.ent && t.sai) // precisa ter entrada E saída
+      .map(t=>({ ent: t.ent, sai: saidaBancoHoras(t.ent, t.sai) }));
+    if(!turnos.length) return;
+    out.push({ nome: f.nome, dia, turnos });
+  });
+  return { dia, funcionarios: out };
+}
+
+function abrirModalPlanilha(){
+  if(!currentDate) currentDate = todayStr();
+  const url = localStorage.getItem(PLANILHA_URL_KEY) || '';
+  document.getElementById('pl-url').value = url;
+  document.getElementById('pl-status').textContent = '';
+  const dados = montarDadosPlanilha();
+  document.getElementById('pl-dia').textContent = dados.dia;
+  const prev = document.getElementById('pl-preview');
+  if(!dados.funcionarios.length){
+    prev.innerHTML = '<div class="empty">Nenhum funcionário com entrada e saída completas hoje.</div>';
+  } else {
+    prev.innerHTML = dados.funcionarios.map(f=>{
+      const turnosTxt = f.turnos.map(t=>`${t.ent} – ${t.sai}`).join('  |  ');
+      return `<div class="item-card"><div class="item-left"><div class="item-desc"><strong>${escapeHTML(f.nome)}</strong> &nbsp; <span style="color:var(--muted);font-family:monospace;">${turnosTxt}</span></div></div></div>`;
+    }).join('');
+  }
+  abrirModal('modal-planilha');
+}
+
+async function enviarParaPlanilha(){
+  const url = document.getElementById('pl-url').value.trim();
+  const status = document.getElementById('pl-status');
+  if(!url || !/^https:\/\/script\.google\.com\/.*\/exec$/.test(url)){
+    status.style.color = 'var(--red)';
+    status.textContent = '⚠️ Cole uma URL válida do Apps Script (deve terminar em /exec).';
+    return;
+  }
+  localStorage.setItem(PLANILHA_URL_KEY, url);
+  const dados = montarDadosPlanilha();
+  if(!dados.funcionarios.length){
+    status.style.color = 'var(--orange)';
+    status.textContent = 'Nada pra enviar — nenhum funcionário com entrada e saída completas.';
+    return;
+  }
+  const btn = document.getElementById('pl-btn-enviar');
+  btn.disabled = true;
+  status.style.color = 'var(--muted)';
+  status.textContent = '⏳ Enviando...';
+  try {
+    // O Apps Script Web App aceita POST simples. Usamos text/plain pra evitar
+    // o "preflight" CORS (o Google não responde a OPTIONS), enviando o JSON
+    // como corpo mesmo assim.
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(dados)
+    });
+    const data = await res.json();
+    if(data && data.ok){
+      const oks = (data.resultados||[]).filter(r=>r.ok);
+      const falhas = (data.resultados||[]).filter(r=>!r.ok);
+      status.style.color = 'var(--green)';
+      status.innerHTML = `✅ Enviado! ${oks.length} funcionário(s) gravado(s) na planilha.` +
+        (falhas.length ? `<br><span style="color:var(--orange);">⚠️ ${falhas.length} não gravado(s): ${falhas.map(f=>escapeHTML(f.nome)+' ('+escapeHTML(f.motivo||'?')+')').join(', ')}</span>` : '');
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = '❌ A planilha respondeu com erro: ' + (data && data.erro ? data.erro : 'desconhecido');
+    }
+  } catch(e){
+    status.style.color = 'var(--red)';
+    status.innerHTML = '❌ Não consegui enviar. Confira se a URL está certa e se o Apps Script foi publicado com acesso "Qualquer pessoa".';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function abrirCalculadora(){
   abrirModalCalcHist();
 }
@@ -2876,6 +3010,7 @@ window.irParaFim=irParaFim;
 window.abrirModalImport=abrirModalImport;window.voltarImportPaste=voltarImportPaste;
 window.processarImport=processarImport;window.confirmarImport=confirmarImport;
 window.confirmarMergeSugestao=confirmarMergeSugestao;
+window.abrirModalPlanilha=abrirModalPlanilha;window.enviarParaPlanilha=enviarParaPlanilha;
 window.abrirCalculadora=abrirCalculadora;window.abrirModalCalcHist=abrirModalCalcHist;
 window.abrirNovoCalculo=abrirNovoCalculo;window.abrirEditarCalculo=abrirEditarCalculo;
 window.excluirCalculo=excluirCalculo;window.ccSetDia=ccSetDia;

@@ -214,6 +214,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="sync-status" style="font-size:11px;color:var(--muted);">Conectando...</div>
   </div>
   <div id="hdr-right" style="font-size:12px;color:var(--muted);flex-shrink:0;"></div>
+  <button class="theme-btn" id="btn-home-hdr" onclick="voltarInicio()" title="Voltar ao início" style="display:none;">🏠</button>
   <button class="theme-btn" id="theme-btn" onclick="cicleTheme()" title="Mudar tema">🎨</button>
 </div>
 
@@ -225,6 +226,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="home-status-box" class="home-status-box"></div>
     <button class="btn btn-green btn-big" id="btn-abrir" type="button" onclick="abrirRelatorioSafe()">📋 Abrir Relatório</button>
     <button class="btn btn-gray" style="margin-top:12px;padding:10px 24px;" onclick="irHistorico()">🗂️ Ver Histórico</button>
+    <button class="btn btn-gray" style="margin-top:12px;padding:10px 24px;" onclick="irConfig()">⚙️ Configurações</button>
     <div class="home-date" id="home-date"></div>
   </div>
 </div>
@@ -359,6 +361,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- CONFIGURAÇÕES -->
+<div class="page" id="page-config">
+  <div class="ctr" style="padding-top:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button class="btn btn-gray" onclick="irHome()">←</button>
+      <div style="font-size:18px;font-weight:800;">⚙️ Configurações</div>
+    </div>
+
+    <!-- EQUIPE -->
+    <div class="sec">
+      <div class="sec-hdr">
+        <div class="sec-title">👥 Equipe cadastrada</div>
+        <button class="btn btn-green" onclick="addNomeEquipe()">+ Nome</button>
+      </div>
+      <div class="sec-body">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">
+          Cadastre aqui os nomes EXATAMENTE como estão nas abas da planilha. No relatório, o nome do funcionário é escolhido desta lista (sem digitar), evitando erro de escrita.
+        </div>
+        <div id="config-equipe-list"></div>
+      </div>
+    </div>
+
+    <!-- PLANILHA -->
+    <div class="sec">
+      <div class="sec-hdr"><div class="sec-title">📊 Planilha</div></div>
+      <div class="sec-body">
+        <div class="fg" style="margin-bottom:6px;">
+          <label>URL do Web App (Apps Script)</label>
+          <input type="text" id="config-planilha-url" placeholder="https://script.google.com/macros/s/.../exec"/>
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;">
+          Só muda se você republicar/trocar a planilha. Fica salva aqui e é usada no botão "Enviar horários pra planilha".
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:4px;">
+      <button class="btn btn-green btn-big" onclick="salvarConfig()">💾 Salvar configurações</button>
+    </div>
+    <div id="config-status" style="font-size:12px;margin-top:10px;text-align:center;"></div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-gray" style="width:100%;padding:10px;" onclick="irHome()">← Voltar ao início</button>
+    </div>
+  </div>
+</div>
+
 <!-- HISTÓRICO -->
 <div class="page" id="page-hist">
   <div class="ctr" style="padding-top:16px;">
@@ -486,7 +534,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="modal-title" id="mf-title">Adicionar Funcionário</div>
     <input type="hidden" id="mf-idx" value="-1"/>
     <input type="hidden" id="mf-ctx" value="main"/>
-    <div class="fg" style="margin-bottom:10px;"><label>Nome</label><input type="text" id="mf-nome" placeholder="ex: Antônio"/></div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label>Nome</label>
+      <select id="mf-nome-select" onchange="onNomeSelectChange()"></select>
+      <input type="text" id="mf-nome" placeholder="Digite o nome" style="margin-top:6px;display:none;"/>
+    </div>
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">TURNOS</div>
     <div id="mf-turnos"></div>
     <button class="btn btn-gray" style="margin-bottom:10px;" onclick="addTurnoForm()">+ Turno / Intervalo</button>
@@ -1086,6 +1138,17 @@ function showPage(id) {
   document.getElementById(id).classList.add('active');
   const fab = document.getElementById('scroll-fab');
   if(fab) fab.style.display = (id==='page-rel') ? 'flex' : 'none';
+  // Botão de casinha no cabeçalho aparece em tudo, menos na própria home.
+  const btnHome = document.getElementById('btn-home-hdr');
+  if(btnHome) btnHome.style.display = (id==='page-home') ? 'none' : 'flex';
+}
+
+// Volta pro início de qualquer lugar com um clique. Se estava editando um dia
+// do histórico, também limpa esse modo.
+function voltarInicio(){
+  editandoHistorico = false;
+  document.getElementById('hdr-right').textContent='';
+  irHome();
 }
 
 // ===== TABS =====
@@ -1497,7 +1560,7 @@ function _openModalFunc(idx,ctx,f,forceFreelance){
   document.getElementById('mf-ctx').value=ctx;
   document.getElementById('mf-title').textContent=funcIsFreelance?(idx>=0?'Editar Freelance':'Adicionar Freelance'):(idx>=0?'Editar Funcionário':'Adicionar Funcionário');
   document.getElementById('mf-free-fields').style.display=funcIsFreelance?'block':'none';
-  document.getElementById('mf-nome').value=f?f.nome||'':'';
+  montarSelectNome(f?f.nome||'':'');
   document.getElementById('mf-consumo').value=f?f.consumo||'':'';
   document.getElementById('mf-obs').value=f?f.obs||'':'';
   setMoneyField('mf-vlrh', f?f.vlrHora:'');
@@ -1510,12 +1573,66 @@ function _openModalFunc(idx,ctx,f,forceFreelance){
   redesenharTurnos();
   if(f) calcFree();
   abrirModal('modal-func');
-  // Foco automático no nome — já dá pra digitar assim que o modal abre, sem
-  // precisar clicar no campo primeiro. Pequeno atraso pra garantir que o
-  // modal já esteja visível antes de focar (evita foco "perdido" em alguns
-  // navegadores quando o elemento ainda está com display:none).
-  setTimeout(()=>{ document.getElementById('mf-nome')?.focus(); }, 50);
 }
+
+// Monta o dropdown de nomes a partir da equipe cadastrada em Configurações.
+// - Se há equipe cadastrada: mostra a lista + "Outro (digitar)".
+// - Se NÃO há equipe (ainda não configurou): cai direto no campo de texto,
+//   pra nunca travar o uso.
+// - Freelance sempre pode digitar (nome livre), então também usa texto.
+// valorAtual: nome do funcionário sendo editado (pra pré-selecionar).
+function montarSelectNome(valorAtual){
+  const sel = document.getElementById('mf-nome-select');
+  const inp = document.getElementById('mf-nome');
+  const equipe = getEquipe();
+
+  // Freelance ou sem equipe cadastrada -> só texto livre
+  if(funcIsFreelance || !equipe.length){
+    sel.style.display='none';
+    inp.style.display='block';
+    inp.value = valorAtual||'';
+    setTimeout(()=>inp.focus(),50);
+    return;
+  }
+
+  sel.style.display='block';
+  let opts = '<option value="">— escolha o nome —</option>';
+  equipe.forEach(n=>{ opts += `<option value="${escapeHTML(n)}">${escapeHTML(n)}</option>`; });
+  opts += '<option value="__outro__">Outro (digitar)…</option>';
+  sel.innerHTML = opts;
+
+  // Pré-seleciona: se o nome atual está na lista, seleciona; senão, se tem
+  // valor (ex: nome antigo que não está na equipe), usa "Outro" + texto.
+  if(valorAtual && equipe.some(n=>n===valorAtual)){
+    sel.value = valorAtual;
+    inp.style.display='none';
+    inp.value = valorAtual;
+  } else if(valorAtual){
+    sel.value = '__outro__';
+    inp.style.display='block';
+    inp.value = valorAtual;
+  } else {
+    sel.value = '';
+    inp.style.display='none';
+    inp.value = '';
+  }
+}
+
+// Quando escolhe no dropdown: "Outro" revela o campo de texto; um nome normal
+// preenche o valor direto.
+function onNomeSelectChange(){
+  const sel = document.getElementById('mf-nome-select');
+  const inp = document.getElementById('mf-nome');
+  if(sel.value==='__outro__'){
+    inp.style.display='block';
+    inp.value='';
+    setTimeout(()=>inp.focus(),30);
+  } else {
+    inp.style.display='none';
+    inp.value = sel.value;
+  }
+}
+
 
 // Adiciona um turno ao formulário. Cada turno tem entrada, saída e um botão
 // de excluir só dele. Como excluir um turno do meio bagunçaria os índices
@@ -2771,6 +2888,65 @@ let calcEditIdx = -1; // índice do cálculo salvo sendo editado (-1 = novo)
 
 // ===== ENVIAR HORÁRIOS PRA PLANILHA (Google Apps Script) =====
 const PLANILHA_URL_KEY = 'piz_planilha_url';
+const EQUIPE_KEY = 'piz_equipe';
+
+// Lê a lista de nomes da equipe cadastrada (array de strings). Vazio se nunca
+// configurou.
+function getEquipe(){
+  try {
+    const raw = localStorage.getItem(EQUIPE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter(n=>n && n.trim()) : [];
+  } catch(e){ return []; }
+}
+function setEquipe(arr){
+  localStorage.setItem(EQUIPE_KEY, JSON.stringify(arr.filter(n=>n && n.trim())));
+}
+
+// Guarda temporário enquanto edita a tela de config (só grava no localStorage
+// ao clicar em Salvar).
+let configEquipeTmp = [];
+
+function irConfig(){
+  configEquipeTmp = getEquipe();
+  if(!configEquipeTmp.length) configEquipeTmp = [''];
+  document.getElementById('config-planilha-url').value = localStorage.getItem(PLANILHA_URL_KEY) || '';
+  document.getElementById('config-status').textContent = '';
+  renderConfigEquipe();
+  showPage('page-config');
+}
+
+function renderConfigEquipe(){
+  const el = document.getElementById('config-equipe-list');
+  el.innerHTML = configEquipeTmp.map((nome,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
+      <input type="text" value="${escapeHTML(nome)}" placeholder="Nome (igual à aba da planilha)"
+        oninput="configEquipeTmp[${i}]=this.value" style="flex:1;"/>
+      <button class="btn btn-red" style="padding:8px 10px;" title="Remover" onclick="removeNomeEquipe(${i})">✕</button>
+    </div>`).join('');
+}
+function addNomeEquipe(){ configEquipeTmp.push(''); renderConfigEquipe();
+  setTimeout(()=>{ const inputs=document.querySelectorAll('#config-equipe-list input'); if(inputs.length) inputs[inputs.length-1].focus(); },30);
+}
+function removeNomeEquipe(i){ configEquipeTmp.splice(i,1); if(!configEquipeTmp.length) configEquipeTmp=['']; renderConfigEquipe(); }
+
+function salvarConfig(){
+  const vistos = new Set();
+  const limpa = [];
+  configEquipeTmp.forEach(n=>{
+    const t = (n||'').trim();
+    if(t && !vistos.has(t.toLowerCase())){ vistos.add(t.toLowerCase()); limpa.push(t); }
+  });
+  setEquipe(limpa);
+  const url = document.getElementById('config-planilha-url').value.trim();
+  if(url) localStorage.setItem(PLANILHA_URL_KEY, url);
+  configEquipeTmp = limpa.length?limpa:[''];
+  renderConfigEquipe();
+  const st = document.getElementById('config-status');
+  st.style.color = 'var(--green)';
+  st.textContent = `✅ Salvo! ${limpa.length} nome(s) na equipe.`;
+}
+
 
 // Converte "HH:MM" em minutos desde 00:00.
 function horaParaMin(h){
@@ -3079,6 +3255,8 @@ window.abrirRelatorio = abrirRelatorio;
 const btnAbrir = document.getElementById('btn-abrir');
 if(btnAbrir) btnAbrir.addEventListener('click', function(ev){ ev.preventDefault(); window.abrirRelatorioSafe(); });
 window.irHome=irHome;window.irHistorico=irHistorico;
+window.irConfig=irConfig;window.salvarConfig=salvarConfig;window.addNomeEquipe=addNomeEquipe;window.removeNomeEquipe=removeNomeEquipe;
+window.voltarInicio=voltarInicio;window.onNomeSelectChange=onNomeSelectChange;
 window.cicleTheme=cicleTheme;
 window.switchTab=switchTab;window.switchVerTab=switchVerTab;
 window.abrirModalDep=abrirModalDep;window.editDep=editDep;window.remDep=remDep;window.salvarDep=salvarDep;

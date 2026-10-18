@@ -115,15 +115,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   54%{opacity:0;}
 }
 /* Easter egg: card do Fernando como se o nome estivesse debaixo de uma
-   cerejeira (sakura) — galho florido no topo e pétalas caindo devagar,
+   cerejeira (sakura) — só as pétalas caindo devagar,
    balançando e girando, às vezes em diagonal. Puramente CSS, loop infinito.
    Cada pétala tem 2 camadas: a de fora cuida da queda (top/left), a de dentro
    cuida do balanço/giro 3D — assim nada "pula" quando o loop recomeça. */
-.func-card.sakura-card{padding-top:26px;border-color:rgba(255,160,200,.55);
-  background:
-    radial-gradient(120% 90% at 100% 0%,rgba(255,183,209,.28),rgba(255,183,209,0) 60%),
-    var(--surface2);}
-.sakura-tree{position:absolute;top:0;right:0;width:78%;max-width:300px;height:44px;pointer-events:none;z-index:2;overflow:visible;}
+.func-card.sakura-card{border-color:rgba(255,160,200,.5);}
+/* Easter egg: card do Anthony com o fundo da bandeira LGBT (6 listras). As
+   listras ficam atrás do conteúdo (z-index:-1 dentro de um stacking context
+   próprio) e com opacidade moderada pra não atrapalhar a leitura. */
+.func-card.pride-card{isolation:isolate;border-color:rgba(255,255,255,.35);}
+.func-card.pride-card::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;opacity:.42;
+  background:linear-gradient(to bottom,#e40303 0 16.66%,#ff8c00 16.66% 33.33%,#ffed00 33.33% 50%,#008026 50% 66.66%,#004dff 66.66% 83.33%,#750787 83.33% 100%);}
+.func-card.pride-card .func-name{text-shadow:0 0 3px var(--surface),0 0 6px var(--surface);}
 .sakura-overlay{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:8px;z-index:1;}
 .sakura-petal{position:absolute;top:-8%;left:var(--x,50%);width:var(--size,9px);height:calc(var(--size,9px)*1.15);opacity:0;
   animation:sakuraDrift var(--dur,8s) linear infinite;animation-delay:var(--d,0s);will-change:top,left,opacity;}
@@ -1434,54 +1437,40 @@ function funcCard(f, i, ctx) {
     `;
   }
 
-  // Easter egg: o Fernando fica "debaixo de uma cerejeira": galho florido no
+  // Easter egg: o Fernando fica "debaixo de uma cerejeira": sem galho, só
   // topo do card e pétalas de sakura caindo pelo card inteiro (de cima pra
   // baixo, às vezes na diagonal). Posição/tamanho/velocidade aleatórios a cada
   // renderização; delays negativos fazem o card já abrir com pétalas no ar.
   const ehFernando = f.nome.trim().toLowerCase()==='fernando';
-  let sakuraOverlay = '', sakuraTree = '';
+  const ehAnthony = f.nome.trim().toLowerCase()==='anthony';
+  let sakuraOverlay = '';
   if(ehFernando){
     const rosas = ['#ffc1d9','#ffadcc','#ffd9e8','#ff9ec3','#ffe3ef'];
     const R = (a,b)=>a+Math.random()*(b-a);
-    const flor = (cx,cy,r,rot,cor)=>{
-      let pet='';
-      for(let k=0;k<5;k++) pet+=`<ellipse cx="0" cy="${(-r*0.58).toFixed(2)}" rx="${(r*0.52).toFixed(2)}" ry="${(r*0.62).toFixed(2)}" transform="rotate(${k*72})" fill="${cor}" stroke="rgba(255,120,170,.35)" stroke-width="0.3"/>`;
-      return `<g transform="translate(${cx} ${cy}) rotate(${rot})">${pet}<circle r="${(r*0.2).toFixed(2)}" fill="#ff7fae"/><circle r="${(r*0.09).toFixed(2)}" fill="#fff3a8"/></g>`;
-    };
-    // galho (viewBox 300x44): sai do canto superior direito e desce pela esquerda
-    const galho = `<path d="M299,5 C262,3 232,14 196,15 C160,16 128,10 84,22" fill="none" stroke="#6b4a3e" stroke-width="3" stroke-linecap="round" opacity=".9"/>
-      <path d="M232,12 C226,22 222,28 214,34" fill="none" stroke="#6b4a3e" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>
-      <path d="M150,13 C146,22 148,28 142,35" fill="none" stroke="#6b4a3e" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>
-      <path d="M262,6 C268,14 266,20 272,25" fill="none" stroke="#6b4a3e" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>`;
-    const pontos = [[284,9,7],[268,5,6],[250,11,8],[232,13,7],[213,34,7],[206,14,8],[188,17,7],[170,13,6.5],[150,14,7.5],[142,35,6.5],[124,12,7],[104,18,6],[86,23,6.5],[272,25,6],[240,22,5.5],[160,24,5]];
-    let flores='';
-    pontos.forEach(([x,y,r])=>{ flores += flor(x,y,r,R(0,72),rosas[Math.floor(Math.random()*rosas.length)]); });
-    // pétalas soltas no galho, pra dar volume
-    sakuraTree = `<svg class="sakura-tree" viewBox="0 0 300 44" preserveAspectRatio="xMaxYMin meet" aria-hidden="true">${galho}${flores}</svg>`;
-
     let petalsHtml = '';
-    const qtd = 20;
+    const qtd = 22;
     for(let p=0; p<qtd; p++){
       const longe = Math.random()<0.4;                       // pétalas "ao fundo": menores e mais suaves
-      const tam = longe ? R(5,7.5) : R(8,13);
+      const tam = longe ? R(5,7) : R(7.5,11);
       const dur = longe ? R(9,13) : R(6,9.5);                // queda lenta, tipo pétala de verdade
-      const x = Math.random()<0.65 ? R(35,98) : R(0,35);     // mais pétalas vindo da árvore (lado direito)
+      const x = R(0,98);
       const diag = Math.random()<0.4;
-      const dx = diag ? R(-45,-18) : R(-14,8);               // algumas caem na diagonal
+      const dx = diag ? (Math.random()<0.5?R(-40,-16):R(16,40)) : R(-12,10);               // algumas caem na diagonal
       const cor = rosas[Math.floor(Math.random()*rosas.length)];
       petalsHtml += `<span class="sakura-petal" style="--x:${x.toFixed(1)}%;--dx:${dx.toFixed(1)}%;--size:${tam.toFixed(1)}px;--dur:${dur.toFixed(2)}s;--d:-${R(0,dur).toFixed(2)}s;--op:${longe?0.55:0.95};">
         <span class="sakura-petal-in" style="--sw:${R(1.8,3.2).toFixed(2)}s;--r0:${R(-60,60).toFixed(0)}deg;${longe?'filter:blur(.5px) drop-shadow(0 0 1px rgba(255,140,185,.4));':''}">
-          <svg viewBox="0 0 12 14" aria-hidden="true">
-            <path d="M6,13.4 C2,11.4 0.2,7.4 1,3.4 C1.4,1.7 2.7,0.6 4.2,0.8 C5,0.9 5.6,1.6 6,2.8 C6.4,1.6 7,0.9 7.8,0.8 C9.3,0.6 10.6,1.7 11,3.4 C11.8,7.4 10,11.4 6,13.4 Z" fill="${cor}"/>
-            <path d="M6,13.4 C4.8,11.4 4.6,9 6,6.6 C7.4,9 7.2,11.4 6,13.4 Z" fill="#ff8fb8" opacity=".55"/>
+          <svg viewBox="0 0 10 16" aria-hidden="true">
+            <path d="M5,15.4 C4.1,13.9 2.5,11.2 2.2,8.2 C1.9,5.2 2.7,2.2 4.3,1.2 C4.7,1 4.9,1.2 5,1.6 C5.2,1.2 5.6,0.9 6,1.2 C7.5,2.2 8.3,5.2 7.8,8.2 C7.4,11.2 5.9,13.9 5,15.4 Z" fill="${cor}"/>
+            <path d="M5,15.4 C4.3,13.6 4.3,11.2 5,9 C5.8,11.2 5.8,13.6 5,15.4 Z" fill="#ff8fb8" opacity=".5"/>
+            <path d="M3.6,4.4 C3.8,3.4 4.4,2.8 4.8,3.1" fill="none" stroke="#fff" stroke-width=".6" stroke-linecap="round" opacity=".55"/>
           </svg>
         </span>
       </span>`;
     }
-    sakuraOverlay = `<div class="sakura-overlay" aria-hidden="true">${petalsHtml}</div>${sakuraTree}`;
+    sakuraOverlay = `<div class="sakura-overlay" aria-hidden="true">${petalsHtml}</div>`;
   }
 
-  return `<div class="func-card ${f.freelance?'free':''} ${ehFernando?'sakura-card':''}" data-func-nome="${escapeHTML(f.nome.toLowerCase())}" data-func-status="${status}">
+  return `<div class="func-card ${f.freelance?'free':''} ${ehFernando?'sakura-card':''} ${ehAnthony?'pride-card':''}" data-func-nome="${escapeHTML(f.nome.toLowerCase())}" data-func-status="${status}">
     ${stormBolts}
     ${sakuraOverlay}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
@@ -3344,6 +3333,6 @@ window.toggleCalcDias=toggleCalcDias;window.upsertFuncFromCalc=upsertFuncFromCal
 setStatusSafe('☁️ Pronto','#1D9E75');
 initHome();
 </script>
-<script src="patch-anotacoes.js?v=6"></script>
+<script src="patch-anotacoes.js?v=7"></script>
 </body>
 </html>

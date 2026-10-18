@@ -172,6 +172,10 @@ function travarAntigos(){
 // Anotações de outros dias ficam na aba "Pendentes" (dentro de Registros).
 function doDia(tipo){return Object.values(itens).filter(i=>valido(i)&&i.tipo===tipo&&!i.cancelado&&i.criadoDia===hoje());}
 function outrosDias(tipo){return Object.values(itens).filter(i=>valido(i)&&i.tipo===tipo&&!i.cancelado&&i.criadoDia!==hoje()&&!expirado(i)&&(!i.pago||i.pagoDia===hoje()));}
+function ordemLista(a,b){
+  if(!!a.pago!==!!b.pago) return a.pago?1:-1;
+  return a.criadoEm-b.criadoEm;
+}
 function soma(l){return l.reduce((s,i)=>s+(Number(i.val)||0),0);}
 function agrupar(lista){
   const m=new Map();
@@ -203,7 +207,7 @@ function cartao(it){
 
 function montarLista(tipo){
   const termo=termoBuscaGlobal();
-  const hojeL=doDia(tipo).filter(i=>casa(i,termo)).sort((a,b)=>b.criadoEm-a.criadoEm);
+  const hojeL=doDia(tipo).filter(i=>casa(i,termo)).sort(ordemLista);
   const outros=outrosDias(tipo).filter(i=>casa(i,termo));
   const pend=outros.filter(i=>!i.pago);
   let html=hojeL.map(cartao).join('');
@@ -350,7 +354,7 @@ window.dvRenderRegistros=function(){
     if(!l.length){el.innerHTML=nota+'<div class="empty">Nenhuma pendência de outros dias.</div>';return;}
     const dias=[...new Set(l.map(i=>i.criadoDia))].sort().reverse();
     el.innerHTML=nota+dias.map(d=>{
-      const g=l.filter(i=>i.criadoDia===d).sort((a,b)=>a.criadoEm-b.criadoEm);
+      const g=l.filter(i=>i.criadoDia===d).sort(ordemLista);
       const ab=g.filter(i=>!i.pago).length;
       return '<div class="func-group-label">'+fmtDate(d)+' ('+ab+' pendente'+(ab===1?'':'s')+')</div>'+g.map(cartao).join('');
     }).join('');
@@ -418,7 +422,7 @@ function injetarCss(){
    // histórico: sem botão Editar
    '#hist-content button[onclick^="editarDia"]{display:none !important;}'+
    // raios do Fabinho
-   '.dv-bolt{opacity:0;animation:dvBolt 2.8s linear infinite;animation-delay:var(--d,0s);filter:drop-shadow(0 0 2px #4fd8ff) drop-shadow(0 0 5px rgba(79,216,255,.65));}'+
+   '.dv-bolt{opacity:0;animation:dvBolt 2.8s linear infinite;animation-delay:var(--d,0s);filter:drop-shadow(0 0 1.5px #4fd8ff) drop-shadow(0 0 3px rgba(79,216,255,.6));}'+
    '.dv-flash{opacity:0;animation:dvFlash 2.8s linear infinite;animation-delay:var(--d,0s);}'+
    '@keyframes dvBolt{0%,100%{opacity:0}2%{opacity:1}3.5%{opacity:.2}5%{opacity:1}8%{opacity:0}48%{opacity:0}49.5%{opacity:.9}51%{opacity:.15}52.5%{opacity:1}56%{opacity:0}}'+
    '@keyframes dvFlash{0%,100%{opacity:0}2%{opacity:.09}3.5%{opacity:0}5%{opacity:.09}8%{opacity:0}48%{opacity:0}49.5%{opacity:.07}52.5%{opacity:.09}56%{opacity:0}}';
@@ -457,6 +461,7 @@ function atualizarFuncCard(){
   corpo.style.display=aberto?'':'none';
   const n=((state&&state.funcionarios)||[]).length;
   tit.innerHTML=(aberto?'▾':'▸')+' 👥 Funcionários <span style="color:var(--muted);font-weight:500;">('+n+')</span>';
+  if(aberto) ajustarRaios();
 }
 const renderFuncBase=renderFunc;
 window.renderFunc=function(){renderFuncBase();atualizarFuncCard();};
@@ -473,64 +478,106 @@ function removerEdicaoHistorico(){
   if(v&&v.parentElement) v.parentElement.style.display='none';   // some o seletor Ver/Editar
 }
 
-// ---------- raios do Fabinho (mais elaborados, 4 raios) ----------
+// ---------- raios do Fabinho (proporcionais ao tamanho real do card) ----------
 function rnd(a,b){return a+Math.random()*(b-a);}
 function clampN(v,a,b){return Math.max(a,Math.min(b,v));}
-function raioPrincipal(x0,segs,jit){
+function dPath(pts){return pts.map(function(p,i){return (i?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');}
+function raioPx(x0,w,h){
+  const segs=Math.max(3,Math.round(h/7)), jit=Math.max(3,h*0.22);
   const pts=[{x:x0,y:0}]; let x=x0;
   for(let k=1;k<=segs;k++){
-    const y=(100/segs)*k+(k<segs?rnd(-3,3):0);
-    x=clampN(x+rnd(-jit,jit)*(Math.random()<0.25?1.8:1),4,96);   // de vez em quando uma quebra mais forte
-    pts.push({x:x,y:clampN(y,0,100)});
+    const y=(h/segs)*k+(k<segs?rnd(-h*0.04,h*0.04):0);
+    x=clampN(x+rnd(-jit,jit)*(Math.random()<0.25?1.7:1),x0-h*0.9,x0+h*0.9);
+    x=clampN(x,2,w-2);
+    pts.push({x:x,y:clampN(y,0,h)});
   }
   return pts;
 }
-function ramoRaio(o,dir,segs){
+function ramoPx(o,dir,h,segs,w){
   const pts=[{x:o.x,y:o.y}]; let x=o.x,y=o.y;
   for(let k=0;k<segs;k++){
-    x=clampN(x+dir*rnd(3,8)*(1-k*0.15),2,98);
-    y=clampN(y+rnd(6,12),0,100);
+    x=clampN(x+dir*rnd(h*0.12,h*0.28)*(1-k*0.15),2,w-2);
+    y=clampN(y+rnd(h*0.18,h*0.34),0,h);
     pts.push({x:x,y:y});
   }
   return pts;
 }
-function dPath(pts){return pts.map(function(p,i){return (i?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');}
-function stormSvgNovo(){
-  const bases=[8+rnd(0,8),30+rnd(0,10),56+rnd(0,10),80+rnd(0,10)];   // 4 raios
+// monta os 4 raios usando o tamanho REAL do card (w x h em pixels)
+function stormSvgConteudo(w,h){
+  const fr=[0.1,0.35,0.6,0.85];
   let grupos='', delayPrimeiro='0';
-  bases.forEach(function(bx,k){
-    const pts=raioPrincipal(bx,7+Math.floor(rnd(0,3)),9);
+  fr.forEach(function(f,k){
+    const x0=clampN(w*f+rnd(-w*0.05,w*0.05),6,w-6);
+    const pts=raioPx(x0,w,h);
     const delay=(k*0.65+rnd(0,0.35)).toFixed(2);
     if(k===0) delayPrimeiro=delay;
     const ramos=[]; const usados={};
-    const nR=2+Math.floor(rnd(0,2));
+    const nR=Math.min(2+Math.floor(rnd(0,2)),pts.length-2);
     for(let r=0;r<nR;r++){
-      const idx=1+Math.floor(rnd(0,pts.length-3));
+      const idx=1+Math.floor(rnd(0,pts.length-2));
       if(usados[idx]) continue; usados[idx]=1;
       const dir=Math.random()<0.5?-1:1;
-      const rp=ramoRaio(pts[idx],dir,3+Math.floor(rnd(0,2)));
+      const rp=ramoPx(pts[idx],dir,h,2+Math.floor(rnd(0,2)),w);
       ramos.push(dPath(rp));
-      if(Math.random()<0.6&&rp.length>2) ramos.push(dPath(ramoRaio(rp[2],-dir,2)));   // sub-ramo
+      if(Math.random()<0.5&&rp.length>2) ramos.push(dPath(ramoPx(rp[2],-dir,h,2,w)));
     }
     const principal=dPath(pts);
-    const base='fill="none" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"';
+    const base='fill="none" stroke-linecap="round" stroke-linejoin="round"';
     let g='<g class="dv-bolt" style="--d:'+delay+'s">';
-    g+='<path d="'+principal+'" '+base+' stroke="#4fd8ff" stroke-width="3" opacity=".55"/>';
-    ramos.forEach(function(d){g+='<path d="'+d+'" '+base+' stroke="#4fd8ff" stroke-width="1.8" opacity=".5"/>';});
-    g+='<path d="'+principal+'" '+base+' stroke="#ffffff" stroke-width="1.2"/>';
-    ramos.forEach(function(d){g+='<path d="'+d+'" '+base+' stroke="#d6fbff" stroke-width="0.8"/>';});
+    g+='<path d="'+principal+'" '+base+' stroke="#4fd8ff" stroke-width="2.2" opacity=".5"/>';
+    ramos.forEach(function(d){g+='<path d="'+d+'" '+base+' stroke="#4fd8ff" stroke-width="1.4" opacity=".45"/>';});
+    g+='<path d="'+principal+'" '+base+' stroke="#ffffff" stroke-width="1"/>';
+    ramos.forEach(function(d){g+='<path d="'+d+'" '+base+' stroke="#d6fbff" stroke-width="0.7"/>';});
     g+='</g>';
     grupos+=g;
   });
-  const flash='<rect class="dv-flash" style="--d:'+delayPrimeiro+'s" x="0" y="0" width="100" height="100" fill="#bff6ff"/>';
-  return '<svg class="storm-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+flash+grupos+'</svg>';
+  return '<rect class="dv-flash" style="--d:'+delayPrimeiro+'s" x="0" y="0" width="'+w+'" height="'+h+'" fill="#bff6ff"/>'+grupos;
 }
+// o card só tem tamanho depois de aparecer na tela: aqui os raios são desenhados no tamanho real
+function ajustarRaios(){
+  document.querySelectorAll('#func-list .storm-svg[data-dv]').forEach(function(svg){
+    const card=svg.parentElement; if(!card) return;
+    const w=card.clientWidth, h=card.clientHeight;
+    if(!w||!h) return;
+    if(svg.getAttribute('data-w')===String(w)&&svg.getAttribute('data-h')===String(h)&&svg.childNodes.length) return;
+    svg.setAttribute('viewBox','0 0 '+w+' '+h);
+    svg.setAttribute('data-w',w); svg.setAttribute('data-h',h);
+    svg.innerHTML=stormSvgConteudo(w,h);
+  });
+}
+let rzT=null;
+window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(ajustarRaios,200);});
+
+// ---------- pétalas do Fernando: mais pétalas e queda mais aleatória ----------
+const TONS_PETALA=['#ffb7d1','#ff9dc4','#ffd6e8','#ff8fc0','#ffc2dd'];
+function petalaExtra(){
+  const cor=TONS_PETALA[Math.floor(Math.random()*TONS_PETALA.length)];
+  return '<span class="sakura-petal" style="--x:'+rnd(0,92).toFixed(1)+'%;--size:'+rnd(7,13).toFixed(1)+'px;--dur:'+rnd(1.5,2.8).toFixed(2)+'s;--d:'+rnd(0,2.5).toFixed(2)+'s;">'+
+    '<svg viewBox="0 0 12 16" width="100%" height="100%"><path d="M6,0.5 C9,2.2 11,5.8 9.6,9.5 C8.6,12.4 6.8,14.6 6,16 C5.2,14.6 3.4,12.4 2.4,9.5 C1,5.8 3,2.2 6,0.5 Z" fill="'+cor+'"/>'+
+    '<path d="M6,2.2 L6,13.6" stroke="rgba(255,255,255,.4)" stroke-width="0.5"/></svg></span>';
+}
+// a cada volta da queda, a pétala escolhe outro lugar, tamanho e velocidade
+document.addEventListener('animationiteration',function(e){
+  const t=e.target;
+  if(e.animationName==='sakuraFall'&&t&&t.classList&&t.classList.contains('sakura-petal')){
+    t.style.setProperty('--x',rnd(0,92).toFixed(1)+'%');
+    t.style.setProperty('--size',rnd(7,13).toFixed(1)+'px');
+    t.style.setProperty('--dur',rnd(1.5,2.8).toFixed(2)+'s');
+  }
+},true);
+
 const funcCardBase=funcCard;
 window.funcCard=function(f,i,ctx){
-  const html=funcCardBase(f,i,ctx);
-  const fabinhoAtivo=funcStatus(f)==='presente'&&String(f.nome||'').trim().toLowerCase()==='fabinho';
-  if(!fabinhoAtivo) return html;
-  return html.replace(/<svg class="storm-svg"[\s\S]*?<\/svg>/,function(){return stormSvgNovo();});
+  let html=funcCardBase(f,i,ctx);
+  const nome=String(f.nome||'').trim().toLowerCase();
+  if(nome==='fabinho'&&funcStatus(f)==='presente'){
+    html=html.replace(/<svg class="storm-svg"[\s\S]*?<\/svg>/,function(){return '<svg class="storm-svg" data-dv="1" preserveAspectRatio="none" aria-hidden="true"></svg>';});
+  }
+  if(nome==='fernando'){
+    let extra=''; for(let k=0;k<4;k++) extra+=petalaExtra();
+    html=html.replace('<div class="sakura-overlay" aria-hidden="true">',function(m){return m+extra;});
+  }
+  return html;
 };
 
 // ---------- início ----------

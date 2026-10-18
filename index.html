@@ -3334,5 +3334,83 @@ setStatusSafe('☁️ Pronto','#1D9E75');
 initHome();
 </script>
 <script src="patch-anotacoes.js?v=7"></script>
+<style>
+.func-card.pride-card::before{display:none !important;}
+.func-card.sakura-card{border-color:rgba(255,160,200,.5);}
+.sakura-overlay{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:8px;z-index:1;}
+.sakura-petal{position:absolute;top:-8%;left:var(--x,50%);width:var(--size,9px);height:var(--size,9px);opacity:0;
+  animation:sakuraDrift var(--dur,8s) linear infinite;animation-delay:var(--d,0s);will-change:top,left,opacity;}
+.sakura-petal-in{width:100%;height:100%;filter:drop-shadow(0 0 1.5px rgba(255,140,185,.5));
+  animation:sakuraSway var(--sw,2.4s) ease-in-out infinite alternate;animation-delay:var(--d,0s);}
+.sakura-petal-in svg{display:block;width:100%;height:100%;overflow:visible;}
+@keyframes sakuraDrift{
+  0%{top:-8%;left:var(--x,50%);opacity:0;}
+  12%{opacity:var(--op,.9);}
+  85%{opacity:var(--op,.9);}
+  100%{top:106%;left:calc(var(--x,50%) + var(--dx,0%));opacity:0;}
+}
+@keyframes sakuraSway{
+  0%{transform:translateX(-7px) rotateZ(var(--r0,-35deg)) perspective(40px) rotateY(0deg);}
+  50%{transform:translateX(0) rotateZ(calc(var(--r0,-35deg) + 40deg)) perspective(40px) rotateY(55deg);}
+  100%{transform:translateX(7px) rotateZ(calc(var(--r0,-35deg) + 95deg)) perspective(40px) rotateY(10deg);}
+}
+@media (prefers-reduced-motion:reduce){.sakura-petal,.sakura-petal-in{animation:none;}.sakura-petal{opacity:.6;top:30%;}}
+</style>
+<script>
+(function(){
+  var prev = window.funcCard;
+  if(typeof prev !== 'function') return;
+  var R = function(a,b){ return a + Math.random()*(b-a); };
+  var FORMAS = [
+    {d:'M3,6 C3,3.2 6,2 9.5,2.2 C13,2.4 16.5,3 17,6.5 C17.4,10 16,14 12.5,16.5 C9.5,18.4 5.5,18 4,15.5 C2.6,13 3,9 3,6 Z'},
+    {d:'M10,2 C14,1.6 17.5,3.5 17,8 C16.6,12.5 13,17.5 8,18.3 C5,18.7 3,17.5 3.6,15.2 C4.5,11 7,4 10,2 Z', vinco:'M10,2.4 C7,6.5 4.8,11 3.9,15'},
+    {d:'M4,8 C4,4.5 7.5,2.2 11,2.4 C14.5,2.6 16.5,4.5 16,8.5 C15.5,13 12,17.5 8.5,17.6 C5.5,17.7 4,12 4,8 Z'},
+    {d:'M2,11 C4,6 9,3 14,2.6 C16.5,2.5 18,3.5 17.8,6 C17.4,11 13.5,16.5 9.5,17 C5.5,17.5 2.5,14.5 2,11 Z', vinco:'M2.6,11.5 C6,8 11,5 17.2,4.5'},
+    {d:'M6,2.5 C9,1.5 13,2.8 13.8,7 C14.5,11 13.5,15 11,17.8 C9.5,19 8,18.6 7,17.5 C4.8,15 3.8,11 4.3,7 C4.6,4.8 5,3.2 6,2.5 Z'},
+    {d:'M2.5,9 C2.5,5.5 6,3.2 10,3.2 C12.5,3.2 14,3.8 17.5,8.5 C15.5,13 12,16.5 8,16.4 C4.8,16.3 2.5,13 2.5,9 Z'},
+    {d:'M4,12 C3,8 6,3 10,2.5 C14,2 16.5,5 16,9.5 C15.6,13.5 13,17 10,17.3 C8,17.5 7,15 5.5,14.5 C4.8,14.2 4.2,13.4 4,12 Z'},
+    {d:'M3,12 C3.5,7.5 8,3 13,3.5 C16,3.8 17.5,6 17,9 C16.4,13.5 12.5,17 8.5,17 C5,17 2.6,15 3,12 Z', vinco:'M17,9 C16.5,13 13,16.5 9,16.9'}
+  ];
+  var BASES = ['#f78fb6','#f58bb3','#fa9cc0','#f48ab0','#f99bbf'];
+  var uid = 0;
+  function overlayPetalas(){
+    var html = '';
+    for(var p=0; p<20; p++){
+      var longe = Math.random() < 0.4;
+      var tam = longe ? R(6,8.5) : R(9,13);
+      var dur = longe ? R(9,13) : R(6,9.5);
+      var x = R(0,98);
+      var dx = Math.random()<0.4 ? (Math.random()<0.5 ? R(-40,-16) : R(16,40)) : R(-12,10);
+      var forma = FORMAS[Math.floor(Math.random()*FORMAS.length)];
+      var gid = 'skb' + (++uid) + '_' + Math.floor(Math.random()*1e6);
+      var base = BASES[Math.floor(Math.random()*BASES.length)];
+      var ang = Math.floor(R(0,360));
+      var vinco = forma.vinco
+        ? '<path d="'+forma.vinco+'" fill="none" stroke="rgba(176,50,105,.45)" stroke-width=".8" stroke-linecap="round"/><path d="'+forma.vinco+'" fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".6" stroke-linecap="round" transform="translate(.9 .6)"/>'
+        : '';
+      html += '<span class="sakura-petal" style="--x:'+x.toFixed(1)+'%;--dx:'+dx.toFixed(1)+'%;--size:'+tam.toFixed(1)+'px;--dur:'+dur.toFixed(2)+'s;--d:-'+R(0,dur).toFixed(2)+'s;--op:'+(longe?0.6:0.95)+';">'
+        + '<span class="sakura-petal-in" style="--sw:'+R(1.8,3.2).toFixed(2)+'s;--r0:'+R(-60,60).toFixed(0)+'deg;'+(longe?'filter:blur(.5px);':'')+'">'
+        + '<svg viewBox="0 0 20 20" aria-hidden="true"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1" gradientTransform="rotate('+ang+' .5 .5)"><stop offset="0" stop-color="'+base+'"/><stop offset=".62" stop-color="#fbb3cf"/><stop offset="1" stop-color="#ffe6f0"/></linearGradient></defs>'
+        + '<path d="'+forma.d+'" fill="url(#'+gid+')"/>'+vinco
+        + '<path d="M7,5 C9,8 9.5,12 8.5,15" fill="none" stroke="rgba(255,255,255,.22)" stroke-width=".5"/></svg>'
+        + '</span></span>';
+    }
+    return '<div class="sakura-overlay" aria-hidden="true">'+html+'</div>';
+  }
+  window.funcCard = function(f,i,ctx){
+    var html = prev(f,i,ctx);
+    html = html.replace(/ pride-card/g,'');
+    var nome = String((f && f.nome) || '').trim().toLowerCase();
+    if(nome === 'fernando'){
+      html = html.replace(/<div class="sakura-overlay"[^>]*>[\s\S]*?<\/div>/,'');
+      html = html.replace(/^(\s*<div class="func-card[^"]*)"/, function(m,a){
+        return a + (a.indexOf('sakura-card')<0 ? ' sakura-card' : '') + '"';
+      });
+      html = html.replace(/^(\s*<div class="func-card[^>]*>)/, function(m){ return m + overlayPetalas(); });
+    }
+    return html;
+  };
+})();
+</script>
 </body>
 </html>

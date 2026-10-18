@@ -504,12 +504,12 @@ function ramoPx(o,dir,h,segs,w){
 }
 // monta os 4 raios usando o tamanho REAL do card (w x h em pixels)
 function stormSvgConteudo(w,h){
-  const fr=[0.1,0.35,0.6,0.85];
+  const fr=[0.07,0.21,0.35,0.5,0.64,0.78,0.92]; // 7 raios (eram 4)
   let grupos='', delayPrimeiro='0';
   fr.forEach(function(f,k){
     const x0=clampN(w*f+rnd(-w*0.05,w*0.05),6,w-6);
     const pts=raioPx(x0,w,h);
-    const delay=(k*0.65+rnd(0,0.35)).toFixed(2);
+    const delay=(k*0.36+rnd(0,0.2)).toFixed(2);
     if(k===0) delayPrimeiro=delay;
     const ramos=[]; const usados={};
     const nR=Math.min(2+Math.floor(rnd(0,2)),pts.length-2);

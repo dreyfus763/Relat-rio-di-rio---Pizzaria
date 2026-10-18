@@ -548,34 +548,12 @@ function ajustarRaios(){
 let rzT=null;
 window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(ajustarRaios,200);});
 
-// ---------- pétalas do Fernando: mais pétalas e queda mais aleatória ----------
-const TONS_PETALA=['#ffb7d1','#ff9dc4','#ffd6e8','#ff8fc0','#ffc2dd'];
-function petalaExtra(){
-  const cor=TONS_PETALA[Math.floor(Math.random()*TONS_PETALA.length)];
-  return '<span class="sakura-petal" style="--x:'+rnd(0,92).toFixed(1)+'%;--size:'+rnd(7,13).toFixed(1)+'px;--dur:'+rnd(1.5,2.8).toFixed(2)+'s;--d:'+rnd(0,2.5).toFixed(2)+'s;">'+
-    '<svg viewBox="0 0 12 16" width="100%" height="100%"><path d="M6,0.5 C9,2.2 11,5.8 9.6,9.5 C8.6,12.4 6.8,14.6 6,16 C5.2,14.6 3.4,12.4 2.4,9.5 C1,5.8 3,2.2 6,0.5 Z" fill="'+cor+'"/>'+
-    '<path d="M6,2.2 L6,13.6" stroke="rgba(255,255,255,.4)" stroke-width="0.5"/></svg></span>';
-}
-// a cada volta da queda, a pétala escolhe outro lugar, tamanho e velocidade
-document.addEventListener('animationiteration',function(e){
-  const t=e.target;
-  if(e.animationName==='sakuraFall'&&t&&t.classList&&t.classList.contains('sakura-petal')){
-    t.style.setProperty('--x',rnd(0,92).toFixed(1)+'%');
-    t.style.setProperty('--size',rnd(7,13).toFixed(1)+'px');
-    t.style.setProperty('--dur',rnd(1.5,2.8).toFixed(2)+'s');
-  }
-},true);
-
 const funcCardBase=funcCard;
 window.funcCard=function(f,i,ctx){
   let html=funcCardBase(f,i,ctx);
   const nome=String(f.nome||'').trim().toLowerCase();
   if(nome==='fabinho'&&funcStatus(f)==='presente'){
     html=html.replace(/<svg class="storm-svg"[\s\S]*?<\/svg>/,function(){return '<svg class="storm-svg" data-dv="1" preserveAspectRatio="none" aria-hidden="true"></svg>';});
-  }
-  if(nome==='fernando'){
-    let extra=''; for(let k=0;k<4;k++) extra+=petalaExtra();
-    html=html.replace('<div class="sakura-overlay" aria-hidden="true">',function(m){return m+extra;});
   }
   return html;
 };

@@ -638,3 +638,66 @@ window.montarDadosPlanilha = function(){
   });
   return { dia: dia, funcionarios: out };
 };
+
+/* ===== CORREÇÃO DAS PENDÊNCIAS (colar no FINAL do patch-anotacoes.js, depois do "})();") ===== */
+(function(){
+  // 1) Começo da contagem passa a ser bem antigo: nenhuma anotação do Firebase é descartada
+  //    (na hora da sincronização o patch relê este valor e traz tudo de volta)
+  try{ localStorage.setItem('piz_dv_corte', JSON.stringify('2000-01-01')); }catch(e){}
+
+  var DIAS = 7; // pendência com mais de 7 dias sai da lista
+  function ler(){ try{ return JSON.parse(localStorage.getItem('piz_dv_cache')) || {}; }catch(e){ return {}; } }
+  function p2(n){ return String(n).padStart(2,'0'); }
+  function menosDias(n){
+    var s = todayStr().split('-').map(Number), d = new Date(s[0], s[1]-1, s[2]-n);
+    return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+  }
+  function hora(ts){ var d = new Date(ts); return p2(d.getDate())+'/'+p2(d.getMonth()+1)+' '+p2(d.getHours())+':'+p2(d.getMinutes()); }
+  function casa(i, t){ return !t || (i.nome||'').toLowerCase().indexOf(t) >= 0 || (i.det||'').toLowerCase().indexOf(t) >= 0; }
+
+  // 2) Cartão: mostra desde quando está pendente
+  function cartao2(it){
+    var devem = it.tipo === 'devem', bloq = !!it.travado, h = todayStr();
+    var cor = devem ? 'var(--red)' : 'var(--green)';
+    var antigo = it.criadoDia !== h;
+    var info = (devem ? 'Devem · ' : 'Devemos · ') + 'lançado ' + hora(it.criadoEm) +
+      (antigo && !it.pago ? ' · ⏳ pendente desde ' + fmtDate(it.criadoDia) : '') +
+      (it.pago && it.pagoEm ? ' · pago ' + hora(it.pagoEm) : '');
+    return '<div class="devia-card ' + (devem ? 'devem' : '') + '" style="' + (it.pago ? 'opacity:.8;' : '') + '">' +
+      '<div style="display:flex;gap:8px;align-items:flex-start;min-width:0;">' +
+        '<input type="checkbox" ' + (it.pago ? 'checked ' : '') + (bloq ? 'disabled ' : '') + 'onchange="dvMarcar(\'' + it.id + '\',this.checked)" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;"/>' +
+        '<div style="min-width:0;">' +
+          '<div style="font-weight:700;font-size:12px;line-height:1.4;white-space:pre-line;' + (it.pago ? 'text-decoration:line-through;' : '') + '">' + escapeHTML(it.nome) + '</div>' +
+          (it.val ? '<div style="color:' + cor + ';font-size:12px;font-weight:600;margin-top:1px;">R$ ' + fmt(it.val) + '</div>' : '') +
+          (it.det ? '<div style="font-size:11px;color:var(--muted);margin-top:1px;">' + escapeHTML(it.det) + '</div>' : '') +
+          '<div style="font-size:9px;color:var(--muted);margin-top:2px;">' + info + (bloq ? ' · 🔒' : '') + '</div>' +
+        '</div>' +
+      '</div>' +
+      (bloq ? '' : '<div style="display:flex;gap:4px;flex-shrink:0;">' +
+        '<button onclick="dvAbrirEdicao(\'' + it.id + '\')" class="btn btn-gray" style="padding:2px 6px;font-size:10px;">✏️</button>' +
+        '<button onclick="dvCancelar(\'' + it.id + '\')" class="btn btn-red" style="padding:2px 6px;font-size:10px;" title="Cancelar (pede motivo)">✕</button>' +
+      '</div>') +
+    '</div>';
+  }
+
+  // 3) Lista: tudo que está pendente aparece, de qualquer dia, até pagar ou completar 7 dias
+  function lista2(tipo){
+    var termo = termoBuscaGlobal(), h = todayStr(), limite = menosDias(DIAS), todos = ler();
+    var l = Object.keys(todos).map(function(k){ return todos[k]; }).filter(function(i){
+      return i && i.criadoDia && i.tipo === tipo && !i.cancelado && casa(i, termo) &&
+        (i.criadoDia === h || (i.criadoDia >= limite && (!i.pago || i.pagoDia === h)));
+    }).sort(function(a, b){
+      if(!!a.pago !== !!b.pago) return a.pago ? 1 : -1;   // pendentes primeiro
+      return a.criadoEm - b.criadoEm;                     // mais antigas no topo
+    });
+    if(!l.length) return termo ? '<div class="empty">Nenhum resultado para "' + escapeHTML(termo) + '".</div>' : '<div class="empty">Nada aqui ainda.</div>';
+    return l.map(cartao2).join('');
+  }
+  window.renderDevia = function(){
+    var a = document.getElementById('devia-list'), b = document.getElementById('devem-list');
+    if(a) a.innerHTML = lista2('devemos');
+    if(b) b.innerHTML = lista2('devem');
+  };
+  window.eRenderDevia = window.renderDevia;
+  window.renderDevia();
+})();

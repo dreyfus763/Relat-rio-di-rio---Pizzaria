@@ -583,3 +583,58 @@ async function iniciar(){
 iniciar();
 
 })();
+
+/* ===== CORREÇÕES (colar no FINAL do patch-anotacoes.js, depois do "})();") ===== */
+
+// 1) Relatório copiado: "&", "<", aspas etc. saem normais (sem &amp;)
+(function(){
+  var gerarAtual = window.gerarTexto;
+  function decodificar(t){
+    return String(t).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#039;/g,"'").replace(/&amp;/g,'&');
+  }
+  window.gerarTexto = function(st, dk){ return decodificar(gerarAtual(st, dk)); };
+})();
+
+// 1) Botão "Copiar" de Vendas/Despesas: texto puro
+window.copiarSecao = function(tipo){
+  var arr = tipo === 'vendas' ? state.vendas : state.despesas;
+  if(!arr.length){ alert('Nenhum item para copiar.'); return; }
+  var txt = '';
+  arr.forEach(function(it){ txt += fmt(it.val) + ' - ' + it.desc + '\n'; });
+  copiar(txt.trim());
+};
+
+// 7) Entrada igual à saída não vira 24h a mais
+window.saidaBancoHoras = function(entrada, saida){
+  var mEnt = horaParaMin(entrada), mSai = horaParaMin(saida);
+  if(mSai === null) return '';
+  if(mEnt === null) return saida;
+  var mFinal = mSai;
+  if(mSai < mEnt) mFinal = mSai + 24*60;
+  return minParaHora(mFinal);
+};
+
+// 2) Horário ilegível ("??") não vai para a planilha
+window.montarDadosPlanilha = function(){
+  state = normalizeState(state);
+  var dia = parseInt(currentDate.split('-')[2], 10);
+  var out = [];
+  var limpaHora = function(h){ return (h && h !== '??') ? h : ''; };
+  state.funcionarios.forEach(function(f){
+    if(f.freelance || f.fromCalc) return;
+    var tb = (f.turnos||[]).filter(function(t){ return t.ent || t.sai; });
+    if(!tb.length) return;
+    var turnos;
+    if(tb.length <= 2){
+      turnos = tb.map(function(t){ return { ent: limpaHora(t.ent), sai: saidaBancoHoras(t.ent, t.sai) }; });
+    } else {
+      var p = tb[0], u = tb[tb.length-1];
+      turnos = [
+        { ent: limpaHora(p.ent), sai: saidaBancoHoras(p.ent, p.sai) },
+        { ent: limpaHora(u.ent), sai: saidaBancoHoras(u.ent, u.sai) }
+      ];
+    }
+    out.push({ nome: f.nome, dia: dia, turnos: turnos });
+  });
+  return { dia: dia, funcionarios: out };
+};

@@ -688,7 +688,7 @@ window.montarDadosPlanilha = function(){
         (i.criadoDia === h || (i.criadoDia >= limite && (!i.pago || i.pagoDia === h)));
     }).sort(function(a, b){
       if(!!a.pago !== !!b.pago) return a.pago ? 1 : -1;   // pendentes primeiro
-      return a.criadoEm - b.criadoEm;                     // mais antigas no topo
+      return b.criadoEm - a.criadoEm;                     // mais recentes no topo
     });
     if(!l.length) return termo ? '<div class="empty">Nenhum resultado para "' + escapeHTML(termo) + '".</div>' : '<div class="empty">Nada aqui ainda.</div>';
     return l.map(cartao2).join('');
